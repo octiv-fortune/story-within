@@ -1,0 +1,203 @@
+{
+  "repository": "octiv-fortune/story-within",
+  "approval_date": "2026-11-12",
+  "implementation": "Authorized by user on 2026-11-12; ticket 01 claimed",
+  "spec": {
+    "number": 1,
+    "id": 6338793128,
+    "html_url": "https://github.com/octiv-fortune/story-within/issues/1",
+    "title": "Story Within: approved MVP implementation specification"
+  },
+  "tickets": {
+    "1": {
+      "number": 2,
+      "id": 6338793349,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/2",
+      "title": "[MVP 01] Record, privately save, and replay a story"
+    },
+    "2": {
+      "number": 3,
+      "id": 6338793549,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/3",
+      "title": "[MVP 02] Pause and resume one continuous narration"
+    },
+    "3": {
+      "number": 4,
+      "id": 6338793715,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/4",
+      "title": "[MVP 03] Develop an idea through the demo storytelling coach"
+    },
+    "4": {
+      "number": 5,
+      "id": 6338793874,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/5",
+      "title": "[MVP 04] Request prepared inspiration without interrupting narration"
+    },
+    "5": {
+      "number": 6,
+      "id": 6338794018,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/6",
+      "title": "[MVP 05] Protect takes during interruptions, navigation, and replacement"
+    },
+    "6": {
+      "number": 7,
+      "id": 6338794231,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/7",
+      "title": "[MVP 06] Edit and manage stories in the personal library"
+    },
+    "7": {
+      "number": 8,
+      "id": 6338794401,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/8",
+      "title": "[MVP 07] Discover and listen to original demo stories"
+    },
+    "8": {
+      "number": 9,
+      "id": 6338794556,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/9",
+      "title": "[MVP 08] Choose and withdraw an explicitly local community preview"
+    },
+    "9": {
+      "number": 10,
+      "id": 6338794701,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/10",
+      "title": "[MVP 09] Verify the complete local MVP on simulator and iPhone"
+    },
+    "10": {
+      "number": 11,
+      "id": 6338794878,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/11",
+      "title": "[MVP 10] Coach a parent's story through the live service"
+    },
+    "11": {
+      "number": 12,
+      "id": 6338795087,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/12",
+      "title": "[MVP 11] Transcribe a real recording and preserve parent corrections"
+    },
+    "12": {
+      "number": 13,
+      "id": 6338795249,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/13",
+      "title": "[MVP 12] Translate reviewed text into isiZulu and retain corrections"
+    },
+    "13": {
+      "number": 14,
+      "id": 6338795428,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/14",
+      "title": "[MVP 13] Offer isiXhosa as a second validated African translation target"
+    },
+    "14": {
+      "number": 15,
+      "id": 6338795574,
+      "html_url": "https://github.com/octiv-fortune/story-within/issues/15",
+      "title": "[MVP 14] Verify and demonstrate the complete live capstone journey"
+    }
+  },
+  "native_subissues": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14
+  ],
+  "native_dependencies": [
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      8,
+      6
+    ],
+    [
+      8,
+      7
+    ],
+    [
+      9,
+      4
+    ],
+    [
+      9,
+      5
+    ],
+    [
+      9,
+      8
+    ],
+    [
+      10,
+      3
+    ],
+    [
+      11,
+      6
+    ],
+    [
+      12,
+      6
+    ],
+    [
+      13,
+      12
+    ],
+    [
+      14,
+      9
+    ],
+    [
+      14,
+      10
+    ],
+    [
+      14,
+      11
+    ],
+    [
+      14,
+      13
+    ]
+  ],
+  "verified": true,
+  "verification": {
+    "parent_issues": 1,
+    "ticket_issues": 14,
+    "native_subissues": 14,
+    "native_dependencies": 20,
+    "implementation": "ON HOLD"
+  }
+}
