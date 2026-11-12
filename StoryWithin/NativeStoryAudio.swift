@@ -35,6 +35,7 @@ final class NativeStoryAudio: NSObject, StoryAudio, AVAudioRecorderDelegate {
     }
 
     func startRecording(to url: URL) throws {
+        guard recorder == nil else { throw AudioFailure.cannotRecord }
         stopPlayback()
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -53,6 +54,23 @@ final class NativeStoryAudio: NSObject, StoryAudio, AVAudioRecorderDelegate {
         } catch {
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
             throw error
+        }
+    }
+
+    func pauseRecording() throws {
+        guard let recorder else { throw AudioFailure.cannotRecord }
+        recorder.pause()
+        guard !recorder.isRecording else { throw AudioFailure.cannotRecord }
+    }
+
+    func resumeRecording() throws {
+        guard let recorder else { throw AudioFailure.cannotRecord }
+        if let recordingError { throw recordingError }
+        try AVAudioSession.sharedInstance().setActive(true)
+        // Reuse this recorder and its open file. Never prepare/create a new take here.
+        guard recorder.record(), recorder.isRecording else {
+            recorder.pause()
+            throw AudioFailure.cannotRecord
         }
     }
 
