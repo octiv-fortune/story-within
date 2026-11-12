@@ -40,7 +40,7 @@ struct DemoLibrary {
             }
             return DemoLibrary(stories: stories, audioURLs: audioURLs)
         } catch {
-            return DemoLibrary(stories: [], audioURLs: [:], errorMessage: "The bundled collection could not open. Close Explore and try again. If this continues, check for an app update. Your private stories remain in your personal library.")
+            return DemoLibrary(stories: [], audioURLs: [:], errorMessage: "The bundled collection could not open. Check for an app update or return Home to record your own story. Your private stories remain in your personal library.")
         }
     }
 }

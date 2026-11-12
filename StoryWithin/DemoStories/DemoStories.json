@@ -27,7 +27,7 @@
       "peak": 0.576934814453125,
       "rms": 0.04254636120163783,
       "fullPCMDecode": "Passed via Apple afconvert",
-      "appPlayback": "Pending ticket07",
+      "appPlayback": "Passed via app-host NativeStoryAudio / AVAudioPlayer workflow test on iOS 17.5; full human listening pending",
       "manualListening": "Pending"
     },
     "theme": "Wisdom and sharing"
@@ -60,7 +60,7 @@
       "peak": 0.999969482421875,
       "rms": 0.0673856594897655,
       "fullPCMDecode": "Passed via Apple afconvert",
-      "appPlayback": "Pending ticket07",
+      "appPlayback": "Passed via app-host NativeStoryAudio / AVAudioPlayer workflow test on iOS 17.5; full human listening pending",
       "manualListening": "Pending"
     },
     "theme": "Friendship and fairness"

@@ -12,7 +12,7 @@ struct ExploreStories: View {
                     Text("Stories to listen to.").font(.largeTitle.bold())
                     Text("A small collection of human-narrated demo stories, ready to play offline. Your personal recordings stay in your private library.")
                     if workflow.demoStories.isEmpty {
-                        ContentUnavailableView("No demo stories available", systemImage: "books.vertical", description: Text(workflow.demoLibraryError ?? "Close Explore and try again, or record a story of your own from Home."))
+                        ContentUnavailableView("No demo stories available", systemImage: "books.vertical", description: Text(workflow.demoLibraryError ?? "Return Home to record a story of your own, or check for an app update."))
                     } else {
                         ForEach(workflow.demoStories) { story in
                             NavigationLink {
