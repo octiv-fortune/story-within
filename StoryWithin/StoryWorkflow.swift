@@ -467,9 +467,9 @@ final class StoryWorkflow {
     }
 
     private var hasReviewableAudio: Bool {
-        guard let url = currentAudioURL,
-              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]) else { return false }
-        return values.isRegularFile == true && (values.fileSize ?? 0) > 0
+        guard let url = currentAudioURL else { return false }
+        do { try audio.validateRecording(at: url); return true }
+        catch { return false }
     }
 
     @discardableResult

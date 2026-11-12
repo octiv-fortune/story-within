@@ -4,6 +4,89 @@ import SwiftData
 
 @MainActor
 final class StoryWorkflowTests: XCTestCase {
+    func testReplacementPreservesOldPreviewOnCancelOrFailureAndRequiresFreshConsentForNewVoice() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var failWrites = false
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio, commitChanges: { context in
+            if failWrites { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording()
+        try audio.speak("reviewed original voice", lasting: 3)
+        workflow.stopRecording()
+        workflow.title = "The family garden"
+        workflow.creatorName = "Mama"
+        workflow.transcript = "My manual story text"
+        workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        let original = try XCTUnwrap(workflow.currentStory)
+        XCTAssertEqual(original.visibility, "localPreview")
+        await workflow.startReplacementRecording(confirmed: true)
+        try audio.speak("cancelled voice", lasting: 2)
+        workflow.cancelReplacementRecording()
+        XCTAssertEqual(workflow.currentStory, original)
+        XCTAssertEqual(workflow.communityStories, [original])
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        await workflow.startReplacementRecording(confirmed: true)
+        try audio.speak("new private voice", lasting: 5)
+        failWrites = true
+        workflow.stopRecording()
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory, original)
+        XCTAssertEqual(workflow.communityStories, [original])
+        let unchanged = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        XCTAssertEqual(unchanged.communityStories, [original])
+        failWrites = false
+        workflow.retryKeepingRecording()
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.id, original.id)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage, "An earlier review cannot authorize replacement voice")
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        XCTAssertEqual(reopened.currentStory?.visibility, "private")
+        XCTAssertEqual(reopened.title, "The family garden")
+        XCTAssertEqual(reopened.creatorName, "Mama")
+        XCTAssertEqual(reopened.transcript, "My manual story text")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("new private voice ".utf8))
+        XCTAssertTrue(reopened.prepareCommunityPreview())
+        reopened.confirmCommunityPreview(confirmed: true)
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.communityStories.map(\.id), [original.id])
+    }
+
+    func testCorruptAudioCannotBeConfirmedFromAnEarlierCommunityReview() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let initial = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await initial.startRecording()
+        initial.stopRecording()
+        let id = try XCTUnwrap(initial.currentStory?.id)
+        let url = try XCTUnwrap(initial.currentAudioURL)
+        let bundled = try XCTUnwrap(DemoLibrary.bundled().audioURLs.values.first)
+        let goodAudio = try Data(contentsOf: bundled)
+        try goodAudio.write(to: url)
+        let workflow = try StoryWorkflow(storageURL: root, audio: NativeStoryAudio())
+        workflow.openStory(id: id)
+        workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        try Data("not playable, despite having bytes".utf8).write(to: url)
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertFalse(workflow.prepareCommunityPreview())
+        try goodAudio.write(to: url)
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.communityStories.map(\.id), [id])
+    }
+
     func testFailedReplacementCopyAndEmptyTakeKeepOriginalForCancellationAndRelaunch() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let recordings = root.appendingPathComponent("Recordings")
