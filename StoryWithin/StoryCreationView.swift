@@ -19,8 +19,11 @@ struct StoryCreationView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         Label(workflow.coaching.modeLabel, systemImage: "sparkle")
                             .font(.subheadline.weight(.semibold))
+                        if let reason = workflow.coaching.availabilityMessage {
+                            Text(reason).font(.footnote)
+                        }
                         if workflow.coaching.context != nil { coach } else { start }
-                        Text("You are the storyteller. These short demo prompts offer ideas; you decide what to tell.")
+                        Text(workflow.coaching.authorshipMessage)
                             .font(.footnote)
                         Label("Preferences and this conversation stay in this session. They are not added to saved story details.", systemImage: "lock")
                             .font(.footnote)
@@ -108,17 +111,17 @@ struct StoryCreationView: View {
                 }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                     .background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
-            if workflow.coaching.isResponding { ProgressView("Preparing a demo prompt…") }
+            if workflow.coaching.isResponding { ProgressView(workflow.coaching.promptProgressLabel) }
             if let error = workflow.coaching.errorMessage {
                 VStack(alignment: .leading, spacing: 12) {
                     Label(error, systemImage: "exclamationmark.triangle")
-                    Button("Retry demo coaching") { Task { await workflow.coaching.retry() } }
+                    Button(workflow.coaching.retryLabel) { Task { await workflow.coaching.retry() } }
                         .buttonStyle(.bordered).frame(minHeight: 44)
                 }.padding(18).background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
             if let reply = workflow.coaching.reply {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Demo coach").font(.headline).accessibilityAddTraits(.isHeader)
+                    Text(workflow.coaching.coachTitle).font(.headline).accessibilityAddTraits(.isHeader)
                     Text(reply.guidance)
                     if let question = reply.question { Text(question).font(.title3.weight(.semibold)) }
                 }.accessibilityElement(children: .combine)
