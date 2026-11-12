@@ -160,7 +160,6 @@ struct RecordingStudio: View {
     @State private var confirmingDiscard = false
     @State private var confirmingReviewExit = false
     @State private var confirmingReplacement = false
-    @State private var showingCommunityPreview = false
     @State private var previewStory: Story?
 
     var body: some View {
@@ -236,10 +235,8 @@ struct RecordingStudio: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: { Text(workflow.isReplacingRecording ? "Only the replacement take will be removed. Your original recording, story details, and review edits stay available." : "This removes this story, its text, and its owned original voice recording from this device. This cannot be undone.") }
-            .sheet(isPresented: $showingCommunityPreview) {
-                if let story = previewStory {
-                    CommunityPreviewReview(workflow: workflow, story: story)
-                }
+            .sheet(item: $previewStory) { story in
+                CommunityPreviewReview(workflow: workflow, story: story)
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { workflow.handleInterruption() }
@@ -409,7 +406,7 @@ struct RecordingStudio: View {
                     .buttonStyle(.bordered).frame(minHeight: 44)
             } else if story.isSaved {
                 Button {
-                    if workflow.prepareCommunityPreview() { previewStory = workflow.communityPreview; showingCommunityPreview = true }
+                    if workflow.prepareCommunityPreview() { previewStory = workflow.communityPreview }
                 } label: {
                     Label("Review for local community preview", systemImage: "books.vertical")
                         .frame(maxWidth: .infinity, minHeight: 44)
