@@ -46,3 +46,6 @@ Technical blocker is the existing coach workflow, not transcription or community
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/11; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+
+- 2026-11-12: Following the user's direction to prioritize MVP functionality and defer accessibility checks, a [minimal coaching proxy contract proposal](../live-coaching-proxy-proposal.md) was drafted for review. It maps to the existing Swift StoryCoachService and keeps live coaching as the next functional slice. It is not an available endpoint or approved backend deployment; status remains needs-info until the stated owner/hosting/authentication/provider/limits/retention decisions and service are available.

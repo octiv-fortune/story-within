@@ -3,7 +3,7 @@
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
 Completed local tickets: 01, 02, 03, 04, 05, 06, 07, 08.
-Current verification gate: 09 (needs-info for remaining physical/accessibility acceptance); no implementation ticket is currently claimed.
+Current verification gate: 09 (remaining functional verification only); accessibility checks explicitly deferred by the user for this MVP. No implementation ticket is currently claimed.
 Ticket 08 is resolved after rendered UI regression and user-confirmed first-open/cancel/reopen/withdrawal verification. Ticket 09 remains incomplete.
 
 ## Baseline
@@ -143,3 +143,8 @@ The clean merged preview worktree was removed after verification; its branch, co
 ## Interruption acceptance
 
 The user confirmed “Passed; microphone stays stopped and draft plays,” following earlier background/replacement/reopen checks. Ticket 05 is resolved from combined functional workflow/build and physical evidence; the exact interruption trigger was not stated and no call/headset-specific result is inferred. Tickets 01–08 are now resolved locally. Ticket 09 remains open for full accessibility and remaining physical negative/recovery verification; M2 remains externally blocked. No application source changed for this result, so no additional build/test run is needed.
+
+
+## MVP functionality priority
+
+2026-11-12: The user explicitly deferred accessibility checks for now. Specification v0.2 and ticket 09 reflect the amendment; the outstanding large-text request is withdrawn, and existing support remains. No accessibility pass or full functional device-test pass is inferred. Functional tickets 01–08 are complete; the local MVP uses real recording/storage/playback and explicit on-device preview with deterministic demo coaching. The next functional expansion is live coaching (ticket 10), followed by live transcription/translation; the missing secure proxy/reviewed contract and language review prerequisites remain real blockers. A minimal coaching proxy contract is being drafted for review, without choosing/deploying a backend stack.

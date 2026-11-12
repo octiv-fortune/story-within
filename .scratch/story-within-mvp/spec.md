@@ -5,7 +5,7 @@ Approval: Specification and ticket breakdown approved by the user on 2026-11-12.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published with 14 native sub-issues and their approved blocking relationships.
 GitHub issue: https://github.com/octiv-fortune/story-within/issues/1
-Version: 0.1
+Version: 0.2
 Date: 2026-11-12 (Africa/Johannesburg)
 Source: [MVP implementation brief](../../docs/agents/product-brief.md) and the user's workflow and constraints.
 
@@ -191,6 +191,10 @@ These implementation decisions were approved in review. No changes have been mad
 - Support Dynamic Type without clipped actions, VoiceOver labels and recording-state announcements, logical focus order, sufficient contrast, Reduce Motion, and at least 44-point primary touch targets. Do not encode recording state only through color or animation.
 - Keep navigation predictable, avoid compulsory animation and autoplaying audio, and allow story preferences without presenting a universal solution for neurodivergent children.
 
+## Current MVP verification amendment
+
+2026-11-12: The user explicitly deferred accessibility checks for now to prioritize MVP functionality. Full accessibility-size Dynamic Type, VoiceOver, Reduce Motion, focus and target/contrast verification are deferred and do not block the current M1 functional milestone. Existing accessible controls/support remain in the app. Deferred checks are not reported as passed. The earlier pending large-text request is withdrawn. Other functional acceptance and real-audio requirements remain in force; M2 live services are still part of the approved scope and retain their external prerequisites.
+
 ## Testing Decisions
 
 The user confirmed this test boundary on 2026-11-12: exercise the create → record → review → save/reopen journey through the application workflow with deterministic AI services and temporary storage, plus physical iPhone verification for actual audio.
@@ -203,7 +207,7 @@ The user confirmed this test boundary on 2026-11-12: exercise the create → rec
 - On a physical iPhone, record speech, pause, request a hint, resume, stop, play the actual audio, save, force-close/relaunch, and play again. Verify narration on both sides of the pause, permission denial, interruption/background handling, and a failed/retried save. Record observed results before claiming device readiness.
 - Check the app on the oldest available compatible simulator and the primary current simulator. If an iOS 17 runtime/device is unavailable, record that compatibility remains unverified rather than treating a newer-OS build as proof.
 - Validate live coach authorship and single-question behavior with a small scenario set. Validate transcription and each offered translation direction with actual provider calls and competent speaker review. Contract fixtures do not prove language quality.
-- Exercise Dynamic Type at accessibility sizes, VoiceOver focus/labels, Reduce Motion, no autoplay, and touch target/contrast checks on the complete journey. Include empty, loading, unavailable, cancellation, and retry paths.
+- Deferred for the current MVP by the user on 2026-11-12: complete-journey Dynamic Type, VoiceOver, Reduce Motion, focus and touch-target/contrast verification. Retain implemented support and revisit verification later. Functional no-autoplay, empty/loading/unavailable, cancellation and retry behavior remains in scope.
 - Build after each vertical slice and before merge to the integration branch. Keep required tests green. Run a final Debug simulator build and a Release iOS compilation check; signing/device installation is an additional check when a device is available.
 
 ### Acceptance criteria
@@ -231,7 +235,7 @@ The user confirmed this test boundary on 2026-11-12: exercise the create → rec
 | AC-19 | M2 | Transcript and translation edits survive relaunch. Source edits flag stale translations and delayed responses cannot silently overwrite newer parent work. |
 | AC-20 | M2 | The supported language list has recorded service checks and competent speaker review. isiZulu and the second African target are not claimed as supported until this passes. |
 | AC-21 | M1/M2 | Preferences and coaching history are absent from discovery/publication metadata, while the parent can inspect the actual audio and text selected for visibility changes. |
-| AC-22 | M1/M2 | The main journey is usable with large Dynamic Type and VoiceOver, respects Reduce Motion, has adequate contrast/targets, and never autoplays audio. |
+| AC-22 | Verification deferred for current MVP | Retain implemented Dynamic Type/VoiceOver/Reduce Motion/contrast/target support. Full accessibility verification is explicitly deferred by the user on 2026-11-12 and is not an M1 release gate. Functional no-autoplay behavior remains required. |
 | AC-23 | M1/M2 | Automated workflow checks pass and the physical iPhone narration → hint → playback → save/relaunch journey has recorded results. |
 | AC-24 | M2 | A full demo completes create → coach → real recording → review/transcription → translation → save/reopen → community discovery without crashing, with any remaining limitations disclosed. |
 | AC-25 | M3 only | A second device discovers and plays a newly published recording only after explicit consent and authenticated upload; unowned changes are denied and withdrawal removes service access. |
@@ -281,3 +285,6 @@ The `ready-for-agent` triage label follows to-spec's convention. Specification a
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/1 with all 14 approved tickets; implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+
+- 2026-11-12: User direction: “Remember this is an MVP, I think let's skip the accessibility checks for now and focus on the functionality.” This amends the current MVP verification gate only; no accessibility pass, removal of existing support, M2 cancellation, backend implementation or deployment is implied.

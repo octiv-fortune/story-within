@@ -14,20 +14,20 @@ Parent specification: [Approved Story Within specification](../spec.md) (approve
 
 ## What to build
 
-The complete local parent/listener journey is demonstrated and its build, accessibility, privacy, recovery, and actual audio results are recorded before declaring the local MVP ready.
+The local parent/listener journey is demonstrated and its functional, build, privacy, recovery and actual-audio results are recorded. Full accessibility verification is deferred by explicit user direction on 2026-11-12 and does not block the current functional MVP.
 
 ## Acceptance criteria
 
 - [ ] Complete both start approaches → contextual demo coach → real narration → pause/hint/resume → review/manual text → private save/relaunch → community preview/withdrawal, plus bundled listening, without crashing.
 - [ ] Relevant native workflow tests and a small UI smoke journey pass. Run Debug simulator and Release iOS compilation checks; record simulator/OS/device versions and signing or oldest-OS gaps accurately.
 - [ ] On a physical iPhone, hear narration before and after a pause, verify elapsed duration, replay after relaunch, and check permission denial, background/interruption recovery, and a failed/retried save.
-- [ ] Complete the main journey with accessibility-size Dynamic Type and VoiceOver; validate focus, state announcements, contrast, primary 44-point targets, Reduce Motion, predictable navigation, and no autoplay.
+- Deferred by the user for the current MVP (2026-11-12; not a passing result): full accessibility-size Dynamic Type, VoiceOver, focus/state announcements, contrast/targets and Reduce Motion verification. Retain existing support. Predictable functional navigation and no autoplay remain required.
 - [ ] Test offline operation, empty/missing assets, cancel/retry, private-story exclusion, draft/replacement preservation, and owned-content deletion.
 - [ ] Record the walkthrough steps, real/demo capability inventory, permission evidence for demo content, observed results, and any remaining limitations. Do not claim local-MVP readiness with unmet essential acceptance criteria.
 
 ## Demonstration
 
-Run and record one complete offline storytelling journey on iPhone, followed by the negative/recovery and accessibility checks.
+Demonstrate the functional local storytelling journey and record negative/recovery results at the agreed workflow/device boundaries. Full accessibility checks are deferred for the current MVP.
 
 ## Delivery constraints and verification
 
@@ -48,3 +48,6 @@ This is an integration/acceptance gate, not a delayed accessibility or testing i
 
 
 - 2026-11-12: Functional prerequisites 04/05/08 are resolved after user-confirmed hint/narration, background/replacement/interruption recovery, and first-open/cancel/reopen/withdrawal checks. Current source passes 64 native workflow tests, rendered preview UI regression, Debug simulator, Release iOS and signed iPhone builds. This gate remains needs-info pending complete accessibility-size Dynamic Type/VoiceOver/Reduce Motion and remaining physical negative/recovery verification. Actual interruption trigger was not specified, so no call/headset-specific result is asserted. See [walkthrough](../evidence/ticket-09-walkthrough.md).
+
+
+- 2026-11-12: User explicitly deferred accessibility checks to prioritize MVP functionality. The outstanding large-text prompt is withdrawn; no accessibility result is claimed. This gate now tracks remaining functional verification only. Existing 64 workflow tests, rendered preview UI regression, builds and user-confirmed actual-audio/preview/interruption results remain valid; physical permission-denial and failed-save behavior have not been independently observed on the phone and are not silently marked passed.

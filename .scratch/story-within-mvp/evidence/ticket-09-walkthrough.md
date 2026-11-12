@@ -1,6 +1,6 @@
 # Local MVP verification walkthrough
 
-Status: in progress. This is a verification record, not a declaration of M1 readiness.
+Status: functional verification in progress. The user deferred accessibility checks on 2026-11-12; they are not a current MVP blocker or a reported pass. Earlier pending-check entries below are historical. This is not a declaration that every functional device check passed.
 
 Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. Fresh final build/test results were subsequently obtained as recorded below; the pre-fix signed build was not installed.
 
@@ -58,3 +58,8 @@ Application fix bde75c2 is integrated through f43aa10. The rendered UI regressio
 ## Real interruption result
 
 User confirmed: “Passed; microphone stays stopped and draft plays.” This completes the physical interruption-result check alongside earlier background finalization and replacement-cancellation passes. The Clock alarm method was suggested after the user said no second phone was available, but their result does not explicitly identify the trigger; no call-specific, alarm-specific or headset route-change claim is made. Functional ticket 05 is resolved. Full accessibility-size Dynamic Type/VoiceOver/Reduce Motion, microphone-denial and remaining physical failure checks remain open.
+
+
+## Current priority amendment
+
+The user explicitly requested skipping accessibility checks for now and focusing on functionality. The pending maximum-text-size question is withdrawn. Do not request further VoiceOver, Dynamic Type, Reduce Motion or focus/target/contrast walkthroughs for this MVP unless the user reopens that work. Keep existing accessibility support. Functional acceptance, privacy, real audio and truthful error recovery remain required; no unperformed physical test is relabeled as passed.
