@@ -43,3 +43,15 @@ Pre-integration full suite: **20 tests, 0 failures**, including all 12 original 
 Interactive native UI smoke was attempted through CUA. App-name lookup did not resolve Simulator; the subsequent app inventory explicitly reported that the Mac was locked and automatic unlock failed. No UI interaction bypass was attempted. Interactive typing/navigation, accessibility-size layout and actual VoiceOver traversal remain unverified until manual unlock permits them. No new physical microphone or language-quality verification is claimed.
 
 Post-integration native tests and Debug/Release builds will be recorded below after merging the accepted pause/resume slice.
+
+## Accepted integration verification
+
+- Source checkpoint: `7a1d898` (`Add native story starts and session-only demo coaching`).
+- Merged integration `0759a6a` (accepted ticket 02 pause/resume plus tracker updates) in merge commit `d4f4f54`. The one content conflict was the studio description: retained the incoming recording/paused explanations and controls, then the ticket 03 idle-only prepared-context card. Incoming audio protocol requirements, paused state, accessibility announcements and all deterministic audio conformances remain intact.
+- Full actual iOS 27.0 workflow suite: **25 tests, 0 failures** (12 original recording regressions, five accepted pause/resume checks, eight coach checks). Log: `/private/tmp/story-within-03-integrated-tests.log`; result bundle: `/private/tmp/story-within-03-derived/Logs/Test/Test-StoryWithin-2026.11.12_07-37-07-+0200.xcresult`. This invocation took about 473 seconds overall, with the tests themselves completing in 1.06 seconds; it eventually succeeded without simulator/service reset.
+- Final Debug Simulator compilation: **BUILD SUCCEEDED**. Log: `/private/tmp/story-within-03-debug-final.log`; isolated output: `/private/tmp/story-within-03-debug-final`.
+- Final Release iOS compilation (signing disabled): **BUILD SUCCEEDED**. Log: `/private/tmp/story-within-03-release-final.log`; isolated output: `/private/tmp/story-within-03-release-final`.
+- `git diff --check` passed. No package/dependency or persistence-schema changes were added.
+- Computed WCAG contrast for the new screens' opaque colors: ink/ivory 10.96:1, ink/white 12.03:1, white/forest 11.81:1. This calculation does not substitute for the pending rendered accessibility inspection.
+
+Remaining verification: manual unlock followed by interactive native start → type → coach → skip → studio navigation and accessibility-size/VoiceOver traversal. Real microphone/hint/device verification remains with the integration owner; ticket 04 has not been implemented here. No ticket resolution, remote publication, or physical-device result was claimed by this slice.
