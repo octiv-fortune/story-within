@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed tickets: 01 (GitHub #2), 03 (GitHub #4), 06 (GitHub #7), resolved locally.
-Current claimed tickets: 02, 07; both have integrated code. The user reports recording works perfectly; corrected playback colors require device recheck before ticket 02 resolution. Ticket 07 still requires human full-recording listening.
-Demo content and listening verification remain owned by ticket 07; code/native playback success alone does not establish human listening.
+Completed local tickets: 01, 02, 03, 06, 07, 08.
+Current claimed tickets: 04 prepared paused hints and 05 interruptions/replacement protection, active in isolated branches.
+Ticket 08 code/workflow acceptance is resolved; its physical consent/privacy/accessibility walkthrough remains unverified for ticket 09.
 
 ## Baseline
 
@@ -54,12 +54,20 @@ Both unchanged human MP3 recordings retain original publisher permission/source 
 
 Ticket 07 remains **claimed** pending human full-recording listening and device playback/credits checks. The user clarified that recording works perfectly and only playback colors were illegible; ticket 02 remains **claimed** until the corrected controls are rechecked. No physical/visual/VoiceOver/full Dynamic Type success is inferred from builds or automated playback. The coordinating agent owns corrected phone installation and the user follow-up. No phone or GitHub action occurred in this checkpoint.
 
+## Ticket 08 result
+
+Merged candidate `433ce71e8f04ce48c611032282eaca3237c36b55` via no-ff merge `48ec00fa5491a463e926c5829f4f0e32a2f5e33f`. The conflict-free committed tree exactly matched the reviewed/tested candidate. The coordinating agent found no concrete defect in private-first saved-content gates, exact snapshot/revalidation, voice/device-only consent, cancellation, failed-commit visibility, withdrawal/fresh consent after edits, or saved-local-preview filtering. No new persisted schema field was added.
+
+All **43 native workflow tests** passed on iOS 17.5, including all 36 baseline cases plus seven privacy/preview cases with deterministic audio and real temporary persistence. Candidate Debug simulator and Release iOS builds passed. One integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket08.log`; outputs: `/private/tmp/story-within-integration-ticket08`. Identical source required no duplicate full-suite run. The known unstaged Xcode project formatting delta was preserved byte-for-byte and its parsed plist still equals the committed project. See [ticket 08](issues/08-community-preview-and-withdrawal.md) and its [evidence](evidence/ticket-08.md).
+
+Ticket 08 is resolved locally from reviewed source/tests/builds. Physical consent/privacy comprehension, exact-content preview/cancel/confirm/withdraw/delete journey, VoiceOver and full Dynamic Type/rendered-layout checks remain unverified for ticket 09. No phone, GitHub, or further source merge occurred in this checkpoint.
+
 ## Current frontier
 
-- 02: Pause/resume code is integrated and claimed. The user reports recording works perfectly; the corrected playback label colors await device recheck before resolution.
-- 03: Two starts and session-only deterministic demo coaching are integrated and resolved locally. The user-approved native-pattern exception and deferred Mobbin/interactive verification remain recorded.
-- 06: Editing/managing personal stories is integrated and resolved locally; physical/visual/accessibility checks remain explicitly unclaimed as documented.
-- 07: Demo discovery/playback and the shared playback contrast correction are integrated and claimed. Human full-recording listening and rendered device playback/credits verification remain pending; audible acceptance is not inferred from code/tests.
+- 04: Prepared hints while paused is claimed and active in its isolated branch.
+- 05: Interruption/replacement protection is claimed and active in its isolated branch.
+- 08: Explicit on-device local preview/withdrawal is integrated and resolved locally; physical consent/privacy/accessibility walkthrough remains unverified.
+- 09: Final local-MVP verification still needs the remaining 04/05 implementation and the recorded manual/device/accessibility acceptance checks. Existing user-confirmed recording, readable controls and both-demo playback are retained.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
 
@@ -68,3 +76,5 @@ No GitHub issue was closed or changed as part of this local merge/tracker step. 
 2026-11-12: User clarified that recording works perfectly; the only reported problem was illegible Play labels. Shared personal/demo playback foreground and tint were corrected in1009f9f/0d556cb, with signed Debug build and updated iPhone. User confirmed: "Buttons readable; both demos play." Tickets02 and07 are now resolved. Whole-story cultural/language review and full VoiceOver walkthrough remain unclaimed.
 
 Current claimed frontier:04 prepared paused hints;05 interruptions/replacement protection;08 explicit on-device community preview/withdrawal. Tickets01,02,03,06,07 resolved. M2 proxy/qualified language reviewers remain unavailable. Known project.pbxproj working delta is Xcode formatting/comments/order only, semantically identical and preserved uncommitted.
+
+After ticket 08 integration: 08 is resolved locally; current claimed implementation frontier is 04/05. The new-flow manual consent/privacy/accessibility checks remain for 09 rather than being inferred from code acceptance.
