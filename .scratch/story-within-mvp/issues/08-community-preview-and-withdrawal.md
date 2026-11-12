@@ -1,6 +1,6 @@
 # 08: Choose and withdraw an explicitly local community preview
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,12 +18,12 @@ A parent can deliberately preview a saved story in this device's community colle
 
 ## Acceptance criteria
 
-- [ ] Saving stays private by default; private stories never enter community queries or cards.
-- [ ] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
-- [ ] Confirmation explicitly mentions the original voice recording. Cancelling changes no visibility; failed persistence never shows successful publication.
-- [ ] Confirmed local preview is discoverable with its scope label after relaunch; withdrawal removes it from community results while retaining the private personal copy.
-- [ ] Coaching history and child-specific descriptions are excluded from discovery metadata; parents can review any personal content contained in the actual audio/text before confirming.
-- [ ] Deleting an owned story removes its local preview without affecting bundled content; workflow checks verify private → cancel → preview → withdraw and persistence failure.
+- [x] Saving stays private by default; private stories never enter community queries or cards.
+- [x] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
+- [x] Confirmation explicitly mentions the original voice recording. Cancelling changes no visibility; failed persistence never shows successful publication.
+- [x] Confirmed local preview is discoverable with its scope label after relaunch; withdrawal removes it from community results while retaining the private personal copy.
+- [x] Coaching history and child-specific descriptions are excluded from discovery metadata; parents can review any personal content contained in the actual audio/text before confirming.
+- [x] Deleting an owned story removes its local preview without affecting bundled content; workflow checks verify private → cancel → preview → withdraw and persistence failure.
 
 ## Demonstration
 
@@ -47,3 +47,15 @@ No remote upload, account, public URL, or cross-device sharing is implied. The p
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
 
 - 2026-11-12: Prerequisites resolved, including user-confirmed physical recording/demo playback and readable controls. Claimed next local-MVP slice in isolated worktree.
+
+- 2026-11-12: Implemented local saved-story review → original-voice/device-only confirmation → read-only local discovery → withdrawal retaining the private personal copy, with truthful visibility labels and fresh consent after kept edits. Full 43 native workflow tests passed, including all 36 prior regressions. Evidence and pending physical/privacy/VoiceOver walkthrough are recorded in [ticket 08 evidence](../evidence/ticket-08.md). Status remains claimed for root review, integration and manual acceptance; no remote issue action was performed.
+
+## Answer
+
+Resolved locally on 2026-11-12 from reviewed source, native workflow tests, and build evidence. No-ff merge `48ec00fa5491a463e926c5829f4f0e32a2f5e33f` integrates candidate `433ce71e8f04ce48c611032282eaca3237c36b55` from `codex/story-within-ticket-08`. The merge was conflict-free and its committed tree exactly matched the tested candidate. The coordinating review found no concrete defect in saved/private-first gates, exact saved-content snapshot, original-voice/device-only confirmation and revalidation, cancellation, private-save withdrawal, truthful failed commits, or saved-local-preview query filtering. The existing persisted visibility String schema is retained.
+
+Private saves remain excluded from Explore. A separate review names attribution, original audio, transcript, and this-device-only scope; it truthfully reports that no translations currently exist. Confirmation requires valid nonempty original audio and kept saved content. Cancellation does not publish; successful confirmation survives relaunch; withdrawal retains the personal story/audio; edits require fresh consent. Owned deletion removes its preview while preserving bundled demos and session-only coaching data never enters discovery. See [ticket 08 evidence](../evidence/ticket-08.md).
+
+All **43 native workflow tests** passed on iOS 17.5: all 36 accepted regressions plus seven privacy/preview cases, using deterministic audio and real temporary storage (`/private/tmp/story-within-08-green-full.log`). Candidate Debug simulator and Release iOS builds passed. One integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket08.log`; outputs: `/private/tmp/story-within-integration-ticket08`. No source delta required a duplicate full-suite run. The known unstaged Xcode project formatting delta was preserved byte-for-byte, excluded from this commit, and verified semantically identical to the committed project.
+
+Physical private/cancel/exact-content consent/local discovery/withdraw/delete walkthrough, privacy comprehension, VoiceOver, full Dynamic Type and rendered control checks remain unverified for the ticket 09 acceptance gate. Source/tests/builds do not establish those manual results. No phone, GitHub, or further source merge occurred in this checkpoint.
