@@ -3,7 +3,7 @@
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
 Completed local tickets: 01, 02, 03, 06, 07, 08.
-Current claimed tickets: 04 prepared paused hints and 05 interruptions/replacement protection, active in isolated branches.
+Current claimed tickets: 04 prepared paused hints (code integrated, physical hint sequence pending) and 05 interruptions/replacement protection (final combined integration pending).
 Ticket 08 code/workflow acceptance is resolved; its physical consent/privacy/accessibility walkthrough remains unverified for ticket 09.
 
 ## Baseline
@@ -62,12 +62,20 @@ All **43 native workflow tests** passed on iOS 17.5, including all 36 baseline c
 
 Ticket 08 is resolved locally from reviewed source/tests/builds. Physical consent/privacy comprehension, exact-content preview/cancel/confirm/withdraw/delete journey, VoiceOver and full Dynamic Type/rendered-layout checks remain unverified for ticket 09. No phone, GitHub, or further source merge occurred in this checkpoint.
 
+## Ticket 04 integration checkpoint
+
+Merged reviewed candidate `903e345fe8665286910d8d17774c959274cdf7fc` via no-ff merge `1ca4b49ec16c3602d9402ed616506da775bc8112`. The conflict-free committed tree exactly matched the tested candidate. The coordinating review found no concrete defect in pause-before-cue, ordered/exhausted cue state, failed-resume retention, explicit action guards or native studio UI. No capture-time service request, cue audio/autoplay or automatic resume was introduced. The existing unstaged Xcode project formatting delta was preserved byte-for-byte and remains semantically identical to the committed project.
+
+All **48 native workflow tests** passed on iOS 17.5, including the 43 accepted cases and five hint cases. Release iOS compilation passed. One integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket04.log`; outputs: `/private/tmp/story-within-integration-ticket04`. Identical source required no duplicate full-suite run. Targeted iOS 27 passes and the full iOS 27 prelaunch stall remain documented rather than claimed as a full pass. See [ticket 04](issues/04-prepared-hints-while-paused.md) and its [evidence](evidence/ticket-04.md).
+
+Ticket 04 remains **claimed** pending the combined physical hint/pause/resume/narration-preservation sequence after ticket 05's final integration. New visual, full Dynamic Type and VoiceOver walkthroughs remain unverified. The coordinating agent owns full-MVP installation and user acceptance; no phone, GitHub, or additional source merge occurred in this checkpoint.
+
 ## Current frontier
 
-- 04: Prepared hints while paused is claimed and active in its isolated branch.
-- 05: Interruption/replacement protection is claimed and active in its isolated branch.
+- 04: Prepared hints are integrated and claimed; the combined physical hint sequence remains pending.
+- 05: Interruption/replacement protection is claimed; final combined integration is pending against the accepted ticket 04 tip.
 - 08: Explicit on-device local preview/withdrawal is integrated and resolved locally; physical consent/privacy/accessibility walkthrough remains unverified.
-- 09: Final local-MVP verification still needs the remaining 04/05 implementation and the recorded manual/device/accessibility acceptance checks. Existing user-confirmed recording, readable controls and both-demo playback are retained.
+- 09: Final local-MVP verification still needs ticket 05 final integration and the recorded combined manual/device/accessibility acceptance checks, including ticket 04's hint sequence. Existing user-confirmed recording, readable controls and both-demo playback are retained.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
 
@@ -78,3 +86,5 @@ No GitHub issue was closed or changed as part of this local merge/tracker step. 
 Current claimed frontier:04 prepared paused hints;05 interruptions/replacement protection;08 explicit on-device community preview/withdrawal. Tickets01,02,03,06,07 resolved. M2 proxy/qualified language reviewers remain unavailable. Known project.pbxproj working delta is Xcode formatting/comments/order only, semantically identical and preserved uncommitted.
 
 After ticket 08 integration: 08 is resolved locally; current claimed implementation frontier is 04/05. The new-flow manual consent/privacy/accessibility checks remain for 09 rather than being inferred from code acceptance.
+
+After ticket 04 integration: 04 remains claimed for the combined physical hint sequence; 05 final combined integration is pending. The accepted source tip is available to ticket 05 without duplicating the full suite for an identical source merge.
