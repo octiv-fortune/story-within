@@ -331,8 +331,9 @@ final class StoryWorkflow {
         return true
     }
 
-    func prepareRecordingWithoutCues() {
+    func prepareRecordingWithoutCues(thought: String = "") {
         guard !hasPendingRecording, captureState != .requestingPermission else { return }
+        coaching.keepThought(thought)
         coaching.useGenericCues()
         prepareNewRecording()
     }

@@ -157,7 +157,7 @@ final class OnDeviceCoachingTests: XCTestCase {
         let preparation = Task { await workflow.prepareCoachedRecording(thought: "Keep her gentle") }
         await model.waitForCueRequest()
         XCTAssertTrue(workflow.coaching.isPreparingCues)
-        workflow.prepareRecordingWithoutCues()
+        workflow.prepareRecordingWithoutCues(thought: "A new thought typed while waiting")
         XCTAssertFalse(workflow.coaching.isPreparingCues)
         await workflow.startRecording()
         workflow.pauseForInspiration()
@@ -170,7 +170,7 @@ final class OnDeviceCoachingTests: XCTestCase {
         XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
         XCTAssertEqual(workflow.captureState, .paused)
         XCTAssertFalse(workflow.isPlaying)
-        XCTAssertEqual(workflow.coaching.parentAnswers, ["Keep her gentle"])
+        XCTAssertEqual(workflow.coaching.parentAnswers, ["Keep her gentle", "A new thought typed while waiting"])
         workflow.resumeRecording()
         workflow.stopRecording()
         workflow.savePrivately()

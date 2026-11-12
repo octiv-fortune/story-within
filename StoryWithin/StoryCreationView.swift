@@ -67,7 +67,9 @@ struct StoryCreationView: View {
                         }.buttonStyle(StoryPrimaryButton()).disabled(workflow.coaching.isPreparingCues)
                         if workflow.coaching.isPreparingCues {
                             Button("Record without waiting") {
-                                workflow.prepareRecordingWithoutCues()
+                                let thought = answer
+                                answer = ""
+                                workflow.prepareRecordingWithoutCues(thought: thought)
                                 showingStudio = true
                             }.buttonStyle(.bordered).frame(minHeight: 44)
                         }

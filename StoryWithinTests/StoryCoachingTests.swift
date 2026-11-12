@@ -10,7 +10,7 @@ final class StoryCoachingTests: XCTestCase {
 
     func testPauseForInspirationPausesCaptureBeforeShowingContextualCueAndResumesOnlyOnRequest() async throws {
         let audio = PausableAudio()
-        let workflow = try StoryWorkflow(storageURL: folder, audio: audio)
+        let workflow = try StoryWorkflow(storageURL: folder, audio: audio, coach: DemoStoryCoachService())
         await workflow.prepareCoachedRecording(approach: .idea, text: "A magical tortoise")
         await workflow.startRecording()
         try audio.speak("beginning", lasting: 2)
@@ -29,7 +29,7 @@ final class StoryCoachingTests: XCTestCase {
         workflow.stopRecording()
         workflow.savePrivately()
         let id = try XCTUnwrap(workflow.currentStory?.id)
-        let reopened = try StoryWorkflow(storageURL: folder, audio: PausableAudio())
+        let reopened = try StoryWorkflow(storageURL: folder, audio: PausableAudio(), coach: DemoStoryCoachService())
         reopened.openStory(id: id)
         XCTAssertEqual(reopened.currentStory?.duration, 5)
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("beginning ending ".utf8))
@@ -38,7 +38,7 @@ final class StoryCoachingTests: XCTestCase {
     }
 
     func testGenericCuesAdvanceOnlyWhilePausedAndExhaustionLeavesResumeAndStopAvailable() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         workflow.showNextCue()
         XCTAssertNil(workflow.currentCue)
         await workflow.startRecording()
@@ -92,7 +92,7 @@ final class StoryCoachingTests: XCTestCase {
             let audio = PausableAudio()
             audio.pauseError = CocoaError(.fileWriteUnknown)
             if finalizationFails { audio.finishError = CocoaError(.fileWriteUnknown) }
-            let workflow = try StoryWorkflow(storageURL: folder.appendingPathComponent(UUID().uuidString), audio: audio)
+            let workflow = try StoryWorkflow(storageURL: folder.appendingPathComponent(UUID().uuidString), audio: audio, coach: DemoStoryCoachService())
             await workflow.startRecording()
             try audio.speak("kept beginning", lasting: 2)
             workflow.pauseForInspiration()
@@ -110,7 +110,7 @@ final class StoryCoachingTests: XCTestCase {
 
     func testFailedResumeKeepsCueAndPausedTakeUntilExplicitRetryOrStop() async throws {
         let audio = PausableAudio()
-        let workflow = try StoryWorkflow(storageURL: folder, audio: audio)
+        let workflow = try StoryWorkflow(storageURL: folder, audio: audio, coach: DemoStoryCoachService())
         await workflow.startRecording()
         try audio.speak("beginning", lasting: 2)
         workflow.pauseForInspiration()
@@ -132,7 +132,7 @@ final class StoryCoachingTests: XCTestCase {
     }
 
     func testIdeaEntersContextualDemoCoachingWithoutWritingTheStory() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.coaching.begin(approach: .idea, text: "A magical tortoise in a moonlit garden")
 
         XCTAssertEqual(workflow.coaching.modeLabel, "Demo coaching · On this device")
@@ -143,7 +143,7 @@ final class StoryCoachingTests: XCTestCase {
         XCTAssertEqual(workflow.captureState, .idle)
     }
     func testChildInterestAndParentAnswersShapeOneQuestionAtATime() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.coaching.begin(approach: .listener, text: "My child enjoys trains and quiet rhythms")
         XCTAssertTrue(workflow.coaching.reply?.guidance.contains("trains") == true)
         XCTAssertEqual(workflow.coaching.reply?.question, "What character could share this interest in your story?")
@@ -155,7 +155,7 @@ final class StoryCoachingTests: XCTestCase {
     }
 
     func testSkipAdvancesWithoutInventingAParentAnswerAndCanEnterRecordingImmediately() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.coaching.begin(approach: .idea, text: "A magical tortoise")
         await workflow.coaching.skip()
         XCTAssertTrue(workflow.coaching.parentAnswers.isEmpty)
@@ -186,7 +186,7 @@ final class StoryCoachingTests: XCTestCase {
     }
 
     func testImmediateRecordingKeepsUnsubmittedIdeaInSessionButNotSavedStoryOrReopen() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.prepareCoachedRecording(approach: .listener, text: "PRIVATE-PREFERENCE: quiet train journeys")
         XCTAssertNil(workflow.coaching.reply)
         XCTAssertEqual(workflow.coaching.context?.initialText, "PRIVATE-PREFERENCE: quiet train journeys")
@@ -199,7 +199,7 @@ final class StoryCoachingTests: XCTestCase {
         workflow.openStory(id: id)
         XCTAssertNil(workflow.coaching.context)
         XCTAssertTrue(workflow.coaching.preparedCues.isEmpty)
-        let reopened = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let reopened = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         reopened.openStory(id: id)
         XCTAssertEqual(reopened.title, "The little train")
         XCTAssertEqual(reopened.currentStory?.visibility, "private")
@@ -246,7 +246,7 @@ final class StoryCoachingTests: XCTestCase {
     }
 
     func testRecordingCarriesTheParentsUnsubmittedNextThoughtWithoutAnotherExchange() async throws {
-        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.coaching.begin(approach: .idea, text: "A magical tortoise")
         await workflow.prepareCoachedRecording(thought: "She stays gentle and visits the mountain")
         XCTAssertEqual(workflow.coaching.parentAnswers, ["She stays gentle and visits the mountain"])
