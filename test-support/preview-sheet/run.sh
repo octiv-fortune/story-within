@@ -58,7 +58,7 @@ xcrun simctl install "$simulator_id" "$app_path"
 app_data="$(xcrun simctl get_app_container "$simulator_id" "$bundle_id" data)"
 simulator_sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 simulator_arch="$(uname -m)"
-xcrun --sdk iphonesimulator swiftc -module-cache-path "$harness_dir/ModuleCache" -module-name StoryWithin -target "$simulator_arch-apple-ios17.0-simulator" -sdk "$simulator_sdk" -default-isolation MainActor -parse-as-library "$repo_root/StoryWithin/StoryWorkflow.swift" "$repo_root/StoryWithin/StoryCoaching.swift" "$repo_root/StoryWithin/DemoStory.swift" "$support_dir/Seed.swift" -o "$harness_dir/seed" > "$harness_dir/seed-build.log" 2>&1
+xcrun --sdk iphonesimulator swiftc -module-cache-path "$harness_dir/ModuleCache" -module-name StoryWithin -target "$simulator_arch-apple-ios27.0-simulator" -sdk "$simulator_sdk" -default-isolation MainActor -parse-as-library "$repo_root/StoryWithin/StoryWorkflow.swift" "$repo_root/StoryWithin/StoryCoaching.swift" "$repo_root/StoryWithin/OnDeviceStoryCoach.swift" "$repo_root/StoryWithin/AppleFoundationStoryModel.swift" "$repo_root/StoryWithin/DemoStory.swift" "$support_dir/Seed.swift" -o "$harness_dir/seed" > "$harness_dir/seed-build.log" 2>&1
 xcrun simctl spawn "$simulator_id" "$harness_dir/seed" "$app_data" "$app_path/en-0004_goat.mp3" | tee "$harness_dir/seed.log"
 xcodebuild "${build_args[@]}" -only-testing:StoryWithinTests/PreviewSheetTests/testFirstReviewTapRendersCommunityPreview -resultBundlePath "$harness_dir/PreviewSheet.xcresult" test-without-building > "$harness_dir/test.log" 2>&1 || {
   tail -35 "$harness_dir/test.log"

@@ -169,3 +169,10 @@ The user confirmed “Passed; microphone stays stopped and draft plays,” follo
 Source `3ff3d8d`/candidate `6581746` merged via `53e59d9`. Both review axes have no remaining concrete blockers after cue wait/busy-state and pending-thought repairs. Current 76 deterministic iOS27 tests, Debug simulator, Release iOS, integration Debug and signed device builds passed. User confirmed actual on-device Apple coaching and record/save/replay on iPhone15Pro after the in-place update. Tickets09/10 are resolved for this narrowed demo; the future language backlog is not reported complete. No cloud/API credential setup is needed.
 
 Original project formatting is retained except four authorized 27.0 target substitutions. It remains unstaged, SHA256 `aa0ea85da9b1808bfb4f776afe508943488f709f4329558cf8aa09d9de671219`, with parsed semantics equal to committed candidate. Backup/stash preserved during validation. See evidence/apple-coach.md and evidence/apple-coach-review.md for results and limits.
+
+
+## Demo closeout
+
+GitHub demo gate #10 and Apple coaching #11 were renamed to the user-selected scope and closed with the actual phone result and deferred-check boundaries. Parent #1 stays open for later language work. The clean merged coaching worktree was removed; branch and temporary validation artifacts are retained. Existing project formatting remains unstaged with only the authorized deployment-target substitutions.
+
+The retained preview regression fixture runner was updated to compile the new coaching source dependencies and target iOS27. Its shell syntax and standalone native seed-tool compilation passed; the full rendered regression was not unnecessarily rerun after the already user-verified demo. No application source changed during closeout.
