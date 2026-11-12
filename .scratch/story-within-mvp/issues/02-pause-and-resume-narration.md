@@ -46,3 +46,9 @@ Prepared hints are deliberately added by ticket 04; this slice establishes the f
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
 
 - 2026-11-12: Ticket 01 resolved after reviewed integration, 12 native workflow passes, green Debug/Release builds, and user-confirmed physical narration/save/reopen. This ticket is now claimed in an isolated worktree.
+
+- 2026-11-12: Reviewed pause/resume code integrated into `codex/story-within-mvp` via no-ff merge `3c2dc080d5cfaa638b79325eb3ede2924d8c2478`, preserving candidate `dc9d004f90ece9c7d4ed91c0259b0e7d42364ca6`. The merge was conflict-free and its entire tree matched the tested candidate. The coordinating review found no concrete defect in the native recorder/workflow/UI changes. See [ticket 02 evidence](../evidence/ticket-02.md).
+
+- 2026-11-12: Candidate verification passed all 17 native workflow tests on iOS 17.5, including the 12 existing regressions, plus Debug simulator and Release iOS builds. The merged integration passed one generic Debug iOS Simulator build with code signing disabled: `/private/tmp/story-within-integration-ticket02.log`; outputs: `/private/tmp/story-within-integration-ticket02`. No source delta required a duplicate full-suite run. Tests use deterministic audio/clock results and real temporary storage; they do not establish microphone continuity.
+
+- 2026-11-12: Status remains **claimed**, and acceptance completion is pending physical iPhone verification: distinguishable speech before and after a several-second pause, one playable narration with the break excluded from duration, then save/relaunch/replay. Full VoiceOver/Dynamic Type walkthrough also remains unverified. The coordinating agent owns installation and the user check; no phone interaction or GitHub update was performed during this merge.
