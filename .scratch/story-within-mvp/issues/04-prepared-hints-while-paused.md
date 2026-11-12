@@ -46,3 +46,5 @@ Use native Swift/SwiftUI and Apple frameworks only. Keep recording/playback real
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
 
 - 2026-11-12: Prerequisites resolved, including user-confirmed physical recording/demo playback and readable controls. Claimed next local-MVP slice in isolated worktree.
+
+- 2026-11-12: Implemented optional contextual/generic paused cue consumption in the existing recording studio, with pause-before-display, ordered explicit advancement, explicit resume, and an exhausted state. No live cue request, speech playback, persisted coaching content, or auto-resume was added. Native workflow and build evidence is recorded in [ticket 04 evidence](../evidence/ticket-04.md). Status remains claimed pending parent review and a physical narration → hint → resume demonstration; interactive visual/VoiceOver checks were unavailable while the Mac was locked.
