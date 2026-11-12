@@ -89,6 +89,12 @@ After ticket 08 integration: 08 is resolved locally; current claimed implementat
 
 After ticket 04 integration: 04 remains claimed for the combined physical hint sequence; 05 final combined integration is pending. The accepted source tip is available to ticket 05 without duplicating the full suite for an identical source merge.
 
+## Independent review and recovery follow-up
+
+The independent Standards review found no documented-rule breach and one nonblocking asset-promotion maintainability observation. The Spec review found a concrete finalized-replacement recovery defect after a failed metadata commit and relaunch. Both reports are committed under `evidence/m1-*-review.md`. Ticket 05 remains claimed while a fresh implementer fixes the defect using red/green workflow regression tests. A pre-fix signed iPhone build compiled but was not installed.
+
+GitHub issues #3 (ticket 02, pause/resume) and #8 (ticket 07, demo listening) were closed separately after verifying exact titles and the recorded user feedback. Later recovery, hint, preview and complete accessibility acceptance gates remain open; no dependency relationships were changed. Clean integrated worktrees 01, 02, 03, 06, 07 and 08 were removed with branches retained. A subsequent environment restart cleared the remaining temporary worktrees/logs; committed source and evidence summaries remain intact.
+
 
 ## Ticket 05 integration checkpoint
 
