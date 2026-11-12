@@ -112,7 +112,7 @@ private struct RecordingStudio: View {
                                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                                 }.buttonStyle(.bordered)
                             }
-                            if workflow.hasPendingRecording && workflow.captureState != .recording {
+                            if workflow.hasPendingRecording && workflow.captureState != .recording && workflow.captureState != .paused {
                                 Button("Retry keeping this take") { workflow.retryKeepingRecording() }.buttonStyle(.bordered)
                                 Button("Discard this take", role: .destructive) { confirmingDiscard = true }.frame(minHeight: 44)
                             }
@@ -134,8 +134,8 @@ private struct RecordingStudio: View {
                 }
             }
             .confirmationDialog("Keep your story before leaving?", isPresented: $confirmingLeave, titleVisibility: .visible) {
-                Button(workflow.captureState == .recording ? "Stop and keep draft" : "Keep on this device") {
-                    if workflow.captureState == .recording { workflow.stopRecording() }
+                Button((workflow.captureState == .recording || workflow.captureState == .paused) ? "Stop and keep draft" : "Keep on this device") {
+                    if workflow.captureState == .recording || workflow.captureState == .paused { workflow.stopRecording() }
                     if workflow.hasPendingRecording { workflow.retryKeepingRecording() }
                     if workflow.currentStory != nil { workflow.keepDraft() }
                     if workflow.canLeaveReview && workflow.errorMessage == nil { workflow.stopPlayback(); dismiss() }
@@ -167,7 +167,8 @@ private struct RecordingStudio: View {
         switch workflow.captureState {
         case .idle: return ""
         case .requestingPermission: return "Requesting microphone access."
-        case .recording: return "Recording started."
+        case .recording: return "Recording. Your microphone is capturing your voice."
+        case .paused: return "Recording paused. Your microphone is not recording. Resume when you are ready."
         case .stopped: return workflow.currentStory == nil ? "Recording stopped." : "Recording stopped. Your private draft is kept on this device."
         case .failed: return "Recording could not finish. Review the error and retry or discard the take."
         }
@@ -175,23 +176,36 @@ private struct RecordingStudio: View {
 
     private var capture: some View {
         VStack(alignment: .leading, spacing: 24) {
-            Text(workflow.captureState == .recording ? "Your voice, your story." : "Begin with your own voice.")
+            Text(workflow.captureState == .paused ? "Take your time." : workflow.captureState == .recording ? "Your voice, your story." : "Begin with your own voice.")
                 .font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
-            Text("Your microphone captures your voice. Your audio stays on this device. Tap Record to choose microphone access.")
+            Text(workflow.captureState == .paused
+                 ? "Your microphone is paused. Resume when you are ready to continue the same story."
+                 : workflow.captureState == .recording
+                 ? "Your microphone is capturing your voice. You can pause for a break or stop to listen."
+                 : "Your microphone captures your voice. Your audio stays on this device. Tap Record to choose microphone access.")
             VStack(spacing: 20) {
-                Image(systemName: workflow.captureState == .recording ? "mic.fill" : "mic")
+                Image(systemName: workflow.captureState == .paused ? "pause.circle" : workflow.captureState == .recording ? "mic.fill" : "mic")
                     .font(.system(size: 56)).foregroundStyle(StoryPalette.forest).accessibilityHidden(true)
                 TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                    Text(timeLabel(workflow.captureState == .recording ? workflow.elapsedRecording : 0))
+                    Text(timeLabel(workflow.elapsedRecording))
                         .font(.largeTitle.monospacedDigit()).accessibilityLabel("Recording time")
                         .accessibilityValue(timeLabel(workflow.elapsedRecording))
                 }
-                Text(workflow.captureState == .recording ? "Recording" : workflow.hasPendingRecording ? "Take needs attention" : "Ready when you are")
+                Text(workflow.captureState == .paused ? "Paused" : workflow.captureState == .recording ? "Recording" : workflow.hasPendingRecording ? "Take needs attention" : "Ready when you are")
                     .font(.headline)
-                if workflow.captureState == .recording {
-                    Button { workflow.stopRecording() } label: {
-                        Label("Stop and review", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: 36)
+                if workflow.captureState == .recording || workflow.captureState == .paused {
+                    Button {
+                        if workflow.captureState == .paused { workflow.resumeRecording() }
+                        else { workflow.pauseRecording() }
+                    } label: {
+                        Label(workflow.captureState == .paused ? "Resume recording" : "Pause recording",
+                              systemImage: workflow.captureState == .paused ? "mic.fill" : "pause.fill")
+                            .frame(maxWidth: .infinity, minHeight: 36)
                     }.buttonStyle(StoryPrimaryButton())
+                        .accessibilityHint(workflow.captureState == .paused ? "Continues the same recording." : "Takes a break without ending your story.")
+                    Button { workflow.stopRecording() } label: {
+                        Label("Stop and review", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: 44)
+                    }.buttonStyle(.bordered).frame(maxWidth: .infinity)
                 } else if !workflow.hasPendingRecording {
                     Button { Task { await workflow.startRecording() } } label: {
                         Label(workflow.captureState == .requestingPermission ? "Requesting access…" : "Record", systemImage: "mic.fill")
