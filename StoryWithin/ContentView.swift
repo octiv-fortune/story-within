@@ -12,6 +12,7 @@ struct ContentView: View {
     @Bindable var workflow: StoryWorkflow
     @State private var showingStudio = false
     @State private var showingExplore = false
+    @State private var showingLibrary = false
 
     var body: some View {
         NavigationStack {
@@ -36,6 +37,10 @@ struct ContentView: View {
                     }
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Your recent stories").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                        Button { showingLibrary = true } label: {
+                            Label("Your personal library", systemImage: "books.vertical.fill")
+                                .frame(minHeight: 44)
+                        }
                         if workflow.stories.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("A beginning is waiting.").font(.headline)
@@ -43,7 +48,7 @@ struct ContentView: View {
                             }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                                 .background(.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 18))
                         } else {
-                            ForEach(workflow.stories) { story in
+                            ForEach(workflow.stories.prefix(3)) { story in
                                 Button {
                                     workflow.openStory(id: story.id); showingStudio = true
                                 } label: {
@@ -75,8 +80,67 @@ struct ContentView: View {
                 RecordingStudio(workflow: workflow)
                     .interactiveDismissDisabled()
             }
+            .sheet(isPresented: $showingLibrary) {
+                PersonalStoryLibrary(workflow: workflow)
+            }
             .sheet(isPresented: $showingExplore) {
                 ExploreStories(workflow: workflow)
+            }
+        }.tint(StoryPalette.forest)
+    }
+}
+
+private struct PersonalStoryLibrary: View {
+    @Bindable var workflow: StoryWorkflow
+    @Environment(\.dismiss) private var dismiss
+    @State private var selection = "All"
+    @State private var showingReview = false
+
+    private var visibleStories: [Story] {
+        workflow.stories.filter { selection == "All" || (selection == "Saved" ? $0.isSaved : !$0.isSaved) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Picker("Show stories", selection: $selection) {
+                        Text("All").tag("All")
+                        Text("Drafts").tag("Drafts")
+                        Text("Saved").tag("Saved")
+                    }.pickerStyle(.segmented)
+                }
+                if visibleStories.isEmpty {
+                    ContentUnavailableView("No \(selection == "All" ? "stories" : selection.lowercased()) yet", systemImage: "book.closed",
+                        description: Text("Your private recordings and details will appear here. Start a story from Home."))
+                        .listRowBackground(Color.clear)
+                } else {
+                    ForEach(visibleStories) { story in
+                        Button {
+                            workflow.openStory(id: story.id)
+                            showingReview = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(story.title).font(.headline)
+                                Text("\(story.isSaved ? "Saved" : "Draft") · Private · \(timeLabel(story.duration))").font(.subheadline)
+                                if !story.creatorName.isEmpty { Text(story.creatorName).font(.subheadline) }
+                                if !story.sourceLanguage.isEmpty { Text(story.sourceLanguage).font(.subheadline) }
+                                Text(story.updatedAt, style: .date).font(.caption)
+                            }.padding(.vertical, 8).foregroundStyle(StoryPalette.ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }.buttonStyle(.plain)
+                    }
+                }
+                Section {
+                    Label("Private on this device. Nothing is published.", systemImage: "lock")
+                        .font(.footnote)
+                }
+            }
+            .scrollContentBackground(.hidden).background(StoryPalette.ivory)
+            .navigationTitle("Your personal library")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showingReview) {
+                RecordingStudio(workflow: workflow).interactiveDismissDisabled()
             }
         }.tint(StoryPalette.forest)
     }
@@ -89,6 +153,7 @@ private struct RecordingStudio: View {
     @Environment(\.openURL) private var openURL
     @State private var confirmingLeave = false
     @State private var confirmingDiscard = false
+    @State private var confirmingReviewExit = false
 
     var body: some View {
         NavigationStack {
@@ -118,17 +183,26 @@ private struct RecordingStudio: View {
                 }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
             .background(StoryPalette.ivory).foregroundStyle(StoryPalette.ink)
-            .navigationTitle(workflow.currentStory == nil ? "Your recording studio" : "Listen to your story")
+            .navigationTitle(workflow.currentStory == nil ? "Your recording studio" : "Review your story")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         if workflow.captureState == .requestingPermission { return }
-                        if workflow.currentStory != nil || workflow.hasPendingRecording { confirmingLeave = true }
+                        if workflow.hasPendingRecording { confirmingLeave = true }
+                        else if workflow.currentStory != nil {
+                            if workflow.hasUnsavedReviewChanges { confirmingReviewExit = true }
+                            else { workflow.stopPlayback(); dismiss() }
+                        }
                         else { dismiss() }
                     }.disabled(workflow.captureState == .requestingPermission)
                 }
             }
+            .confirmationDialog("Keep your changes?", isPresented: $confirmingReviewExit, titleVisibility: .visible) {
+                Button("Keep changes") { leaveReview(.keepChanges) }
+                Button("Discard changes", role: .destructive) { leaveReview(.discardChanges) }
+                Button("Cancel", role: .cancel) { _ = workflow.resolveReviewExit(.cancel) }
+            } message: { Text("Discarding changes restores the last kept details and text. Your original recording stays in your library.") }
             .confirmationDialog("Keep your story before leaving?", isPresented: $confirmingLeave, titleVisibility: .visible) {
                 Button((workflow.captureState == .recording || workflow.captureState == .paused) ? "Stop and keep draft" : "Keep on this device") {
                     if workflow.captureState == .recording || workflow.captureState == .paused { workflow.stopRecording() }
@@ -139,13 +213,14 @@ private struct RecordingStudio: View {
                 Button("Discard recording", role: .destructive) { confirmingDiscard = true }
                 Button("Keep reviewing", role: .cancel) { }
             } message: { Text("Keeping retains your recording privately on this device. Discarding permanently removes this recording.") }
-            .confirmationDialog("Permanently discard this recording?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                Button("Discard recording", role: .destructive) {
-                    workflow.discardRecording()
+            .confirmationDialog(workflow.currentStory == nil ? "Permanently discard this recording?" : "Permanently delete this story?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                Button(workflow.currentStory == nil ? "Discard recording" : "Delete story", role: .destructive) {
+                    if workflow.currentStory != nil { workflow.deleteCurrentStory(confirmed: true) }
+                    else { workflow.discardRecording() }
                     if workflow.errorMessage == nil { dismiss() }
                 }
                 Button("Cancel", role: .cancel) { }
-            } message: { Text("This removes this story and its original voice recording from this device.") }
+            } message: { Text("This removes this story, its text, and its owned original voice recording from this device. This cannot be undone.") }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { workflow.handleInterruption() }
             }
@@ -237,6 +312,20 @@ private struct RecordingStudio: View {
                 TextField("Story title", text: $workflow.title, axis: .vertical)
                     .textFieldStyle(.roundedBorder).accessibilityLabel("Story title")
             }
+            VStack(alignment: .leading, spacing: 16) {
+                reviewField("Creator display name", text: $workflow.creatorName, prompt: "Optional name")
+                reviewField("Theme", text: $workflow.theme, prompt: "For example, courage or kindness")
+                reviewField("Original language", text: $workflow.sourceLanguage, prompt: "Unknown or your chosen language")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Your transcript").font(.headline)
+                    Text("Type the words from your recording, if you like. This is your own text; no AI transcription has been run.")
+                        .font(.footnote)
+                    TextEditor(text: $workflow.transcript)
+                        .frame(minHeight: 180).padding(8)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityLabel("Your manually entered transcript")
+                }
+            }
             Button {
                 workflow.savePrivately()
                 if workflow.errorMessage == nil { workflow.stopPlayback(); dismiss() }
@@ -244,12 +333,26 @@ private struct RecordingStudio: View {
                 Label("Save privately", systemImage: "lock.fill").frame(maxWidth: .infinity, minHeight: 36)
             }.buttonStyle(StoryPrimaryButton())
             Text("You can return from Home to listen again. No account, internet, transcript, or AI result is needed.").font(.footnote)
+            Button("Delete story from this device", role: .destructive) { confirmingDiscard = true }
+                .frame(minHeight: 44)
         }.task {
             while !Task.isCancelled {
                 workflow.refreshPlayback()
                 try? await Task.sleep(for: .milliseconds(400))
             }
         }
+    }
+
+    private func reviewField(_ label: String, text: Binding<String>, prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label).font(.headline)
+            TextField(prompt, text: text, axis: .vertical)
+                .textFieldStyle(.roundedBorder).accessibilityLabel(label)
+        }
+    }
+
+    private func leaveReview(_ choice: ReviewExitChoice) {
+        if workflow.resolveReviewExit(choice) { workflow.stopPlayback(); dismiss() }
     }
 
     @ViewBuilder private var playbackButtons: some View {

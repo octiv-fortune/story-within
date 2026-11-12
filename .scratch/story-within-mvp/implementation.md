@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed ticket: 01 (GitHub #2), resolved locally.
-Current claimed tickets: 02, 03, 06; ticket 02 code is integrated pending physical continuity verification, while 03 and 06 remain active in isolated branches.
-Dependency-unblocked content frontier: 07, with acquisition/verification prerequisites still pending.
+Completed tickets: 01 (GitHub #2), 06 (GitHub #7), resolved locally.
+Current claimed tickets: 02, 03, 07; ticket 02 code is integrated pending physical continuity verification, while 03 and 07 remain active in isolated branches.
+Demo content acquisition/verification remains owned by active ticket 07; candidate discovery alone does not complete it.
 
 ## Baseline
 
@@ -30,11 +30,19 @@ All 17 native workflow tests passed on iOS 17.5, retaining all 12 ticket 01 regr
 
 Ticket 02 remains **claimed**. Deterministic audio/clock tests verify allowed transitions, duration semantics, retained narration, recovery, and real temporary persistence. Physical speech before/after pause, excluded break duration, playback, and save/relaunch continuity still require the coordinating agent and user. Full VoiceOver/Dynamic Type studio/review verification is not claimed. No phone or GitHub action was performed in this integration step.
 
+## Ticket 06 result
+
+Merged reviewed candidate `cb7377cfc126d6d4ab1f080559f94bc4a7cd8453` via no-ff merge `e6e3ab815e28ee63034965359cb50a4ffe1b41d1`. The merge was conflict-free and its entire tree matched the tested candidate. The coordinating agent reviewed the native workflow, UI, optional-field SwiftData migration, and guarded asset deletion with no concrete defect found; root-committed ticket 02/03/07 claims were preserved.
+
+All **23 native workflow tests** passed on iOS 17.5, including all accepted 01/02 cases plus original-schema migration, metadata/manual-text editing and persistence, recoverable writes, review exit choices, and confirmed/cancelled/failed deletion with asset ownership. Release generic iOS compilation passed. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket06.log`; outputs: `/private/tmp/story-within-integration-ticket06`. Identical source did not require a duplicate full-suite run. See [ticket 06](issues/06-edit-and-manage-personal-stories.md) and its [evidence](evidence/ticket-06.md).
+
+Ticket 06 is resolved locally from source/workflow/build evidence. No ticket 06 physical-device migration/playback, visual-layout, VoiceOver, or full Dynamic Type journey result is claimed. The coordinating agent will handle updated iPhone installation and user verification; ticket 02 remains claimed pending real pause/continuity. No further source integration is started in this checkpoint.
+
 ## Current frontier
 
 - 02: Pause/resume code is integrated and claimed; conclusive audio continuity still requires physical iPhone verification before resolution.
 - 03: Two starts and deterministic demo coaching are dependency-unblocked. After Mobbin transport failure, the user explicitly approved: “Proceed with native patterns; revisit Mobbin.” Native-pattern implementation may proceed; Mobbin inspection is deferred and must be revisited transparently.
-- 06: Editing/managing personal stories is dependency-unblocked.
-- 07: Demo discovery/playback is dependency-unblocked, and licensed content candidates have been found. Acquisition, attribution/permission evidence, and content verification remain pending; candidate discovery alone does not satisfy those prerequisites.
+- 06: Editing/managing personal stories is integrated and resolved locally; physical/visual/accessibility checks remain explicitly unclaimed as documented.
+- 07: Demo discovery/playback is claimed and active in its isolated branch. Licensed content candidates have been found; acquisition, attribution/permission evidence, and content verification remain with that implementation and must not be inferred from candidate discovery.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
