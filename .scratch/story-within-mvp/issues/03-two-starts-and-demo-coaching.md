@@ -1,6 +1,6 @@
 # 03: Develop an idea through the demo storytelling coach
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,13 +18,13 @@ A parent can start with an idea or a child preference, shape it through brief co
 
 ## Acceptance criteria
 
-- [ ] Both starting approaches accept parent text and enter the same conversation; deterministic replies reflect the chosen approach and at least the parent's supplied character, setting, or preference.
-- [ ] Each response has at most one primary question; Skip works without answering; Start Recording remains available with no minimum exchange count.
-- [ ] A StoryCoachService boundary returns contextual short guidance and prepared text cues through a deterministic mock implementation, visibly labeled as demo coaching.
-- [ ] Test scenarios preserve the parent's decisions, never output a completed story, and make no diagnostic, therapeutic, or invented cultural-authenticity claims.
-- [ ] Starting recording carries the working story context and prepared cues into the studio. Cue preparation failure leaves recording available with clearly generic fallback cues.
-- [ ] Conversation and child preferences remain session-scoped; saving the narration does not copy them into story metadata or discovery data.
-- [ ] Workflow checks cover both entries, skip, immediate recording, and cue-preparation failure; recording and save/reopen remain functional offline.
+- [x] Both starting approaches accept parent text and enter the same conversation; deterministic replies reflect the chosen approach and at least the parent's supplied character, setting, or preference.
+- [x] Each response has at most one primary question; Skip works without answering; Start Recording remains available with no minimum exchange count.
+- [x] A StoryCoachService boundary returns contextual short guidance and prepared text cues through a deterministic mock implementation, visibly labeled as demo coaching.
+- [x] Test scenarios preserve the parent's decisions, never output a completed story, and make no diagnostic, therapeutic, or invented cultural-authenticity claims.
+- [x] Starting recording carries the working story context and prepared cues into the studio. Cue preparation failure leaves recording available with clearly generic fallback cues.
+- [x] Conversation and child preferences remain session-scoped; saving the narration does not copy them into story metadata or discovery data.
+- [x] Workflow checks cover both entries, skip, immediate recording, and cue-preparation failure; recording and save/reopen remain functional offline.
 
 ## Demonstration
 
@@ -49,3 +49,13 @@ This introduces the mock/live seam without adding a provider, credential, backen
 
 - 2026-11-12: Ticket 01 resolved after reviewed integration, 12 native workflow passes, green Debug/Release builds, and user-confirmed physical narration/save/reopen. This ticket is now claimed in an isolated worktree.
 - 2026-11-12: Mobbin coach search failed twice with HTTP transport error. The user explicitly approved native patterns now and revisiting Mobbin later; do not claim uninspected coach references.
+
+## Answer
+
+Resolved locally on 2026-11-12 from the approved workflow criteria, reviewed source, native tests, and compilation evidence. No-ff merge `c1a0cfad0964ec3fb3d8ecc20d29714d91aee030` integrates candidate `d87f0d145f7152cea39bb8d65970faaf6e078da1` from `codex/story-within-ticket-03`, including accepted ticket 06 via `f77505a`. The merge was conflict-free and its committed tree exactly matched the tested candidate. The coordinating agent reviewed deterministic/contextual guidance, parent-choice preservation, bounded service context, pending-request guards, generic cue fallback, and session-only data with no concrete defect found.
+
+Home Create now offers idea or listener-interest starts into the same visibly labeled demo coach. Skip and immediate recording remain available; short contextual replies have at most one primary question. Prepared or clearly generic fallback cues accompany session context into the existing studio. Session-only coach/child-preference data is cleared when reopening a story and never copied into persisted metadata. Recent and personal-library stories continue to open review directly. See [ticket 03 implementation evidence](../evidence/ticket-03.md).
+
+Final candidate verification passed all **31 native workflow tests** on iOS 27.0, covering all accepted recording/pause/library regressions and eight coaching scenarios: `/private/tmp/story-within-03-review-integrated-tests.log`. Candidate Debug simulator and Release iOS builds passed. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket03.log`; outputs: `/private/tmp/story-within-integration-ticket03`. No source delta required a duplicate full-suite run. A concurrent project-file formatting change was preserved outside this merge/tracker commit; its parsed plist was semantically identical to the committed candidate project.
+
+The user explicitly authorized native patterns after two Mobbin transport failures: “Proceed with native patterns; revisit Mobbin.” Coach-reference inspection remains deferred. Interactive CUA verification was blocked by the locked Mac and unsuccessful automatic unlock; no bypass was attempted. Interactive typing/navigation, rendered layout, full Dynamic Type/VoiceOver traversal, and new physical microphone behavior remain unverified. This resolution does not claim those checks or the still-pending ticket 02 physical continuity result. No phone or GitHub action was performed during integration.

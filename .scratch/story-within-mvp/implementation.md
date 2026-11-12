@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed tickets: 01 (GitHub #2), 06 (GitHub #7), resolved locally.
-Current claimed tickets: 02, 03, 07; ticket 02 code is integrated pending physical continuity verification, while 03 and 07 remain active in isolated branches.
-Demo content acquisition/verification remains owned by active ticket 07; candidate discovery alone does not complete it.
+Completed tickets: 01 (GitHub #2), 03 (GitHub #4), 06 (GitHub #7), resolved locally.
+Current claimed tickets: 02, 07; ticket 02 code is integrated pending physical continuity verification, while ticket 07 has a code candidate awaiting integration and manual listening.
+Demo content and listening verification remain owned by ticket 07; candidate/code completion alone does not establish audible playback.
 
 ## Baseline
 
@@ -38,11 +38,19 @@ All **23 native workflow tests** passed on iOS 17.5, including all accepted 01/0
 
 Ticket 06 is resolved locally from source/workflow/build evidence. No ticket 06 physical-device migration/playback, visual-layout, VoiceOver, or full Dynamic Type journey result is claimed. The coordinating agent will handle updated iPhone installation and user verification; ticket 02 remains claimed pending real pause/continuity. No further source integration is started in this checkpoint.
 
+## Ticket 03 result
+
+Merged reviewed candidate `d87f0d145f7152cea39bb8d65970faaf6e078da1` via no-ff merge `c1a0cfad0964ec3fb3d8ecc20d29714d91aee030`. The merge was conflict-free and its committed tree exactly matched the tested candidate, including accepted ticket 06 via `f77505a`. The coordinating agent found no concrete defect in contextual deterministic coaching, one-question replies, preserved parent choices, bounded service context, asynchronous request guards, generic cue fallback, session-only data, or direct review entry from recent/library rows.
+
+All **31 native workflow tests** passed on iOS 27.0, including all accepted recording/pause/library regressions and eight coach scenarios. Candidate Debug simulator and Release iOS builds passed. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket03.log`; outputs: `/private/tmp/story-within-integration-ticket03`. No source delta required a duplicate full-suite run. A concurrent project-file formatting change was preserved outside this merge/tracker commit and verified to have the same parsed plist as the committed candidate project. See [ticket 03](issues/03-two-starts-and-demo-coaching.md) and its [evidence](evidence/ticket-03.md).
+
+Ticket 03 is resolved locally against the approved workflow criteria. The explicit user exception permits native patterns after Mobbin transport failures; coach-reference inspection remains deferred. A locked Mac blocked interactive CUA, so typing/navigation, rendered layout, full Dynamic Type/VoiceOver traversal, and physical microphone checks remain unverified. No phone, GitHub, or additional source merge was performed in this checkpoint.
+
 ## Current frontier
 
 - 02: Pause/resume code is integrated and claimed; conclusive audio continuity still requires physical iPhone verification before resolution.
-- 03: Two starts and deterministic demo coaching are dependency-unblocked. After Mobbin transport failure, the user explicitly approved: “Proceed with native patterns; revisit Mobbin.” Native-pattern implementation may proceed; Mobbin inspection is deferred and must be revisited transparently.
+- 03: Two starts and session-only deterministic demo coaching are integrated and resolved locally. The user-approved native-pattern exception and deferred Mobbin/interactive verification remain recorded.
 - 06: Editing/managing personal stories is integrated and resolved locally; physical/visual/accessibility checks remain explicitly unclaimed as documented.
-- 07: Demo discovery/playback is claimed and active in its isolated branch. Licensed content candidates have been found; acquisition, attribution/permission evidence, and content verification remain with that implementation and must not be inferred from candidate discovery.
+- 07: Demo discovery/playback is claimed, with a code candidate awaiting integration and manual listening. Attribution/permission and content/playback verification must be established from its evidence; audible playback is not inferred from code/tests.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
