@@ -43,3 +43,14 @@ Final copy clarifies that a damaged bundled catalog needs an app update or retur
 - `/private/tmp/story-within-07-debug-final.log`: final Debug generic iOS Simulator build passed.
 - `/private/tmp/story-within-07-release-final.log`: final Release generic iOS build passed.
 - Integration tip rechecked before handoff: `3cf2c25`, already merged. No remaining Swift source concurrency warnings; Apple tooling emits its unrelated AppIntents metadata-skip warning and SDK operating-system-build parsing diagnostics, while builds/tests succeed.
+
+## Accepted coaching integration
+
+Merged committed integration `1e93aa0` (accepted ticket 03 source `d87f0d1`, plus 02 and 06) as `aeea454`. The workflow initializer preserves the optional coach service, optional read-only demo library, and trailing default persistence hook. Reopening a personal story clears the demo selection and resets session-only coaching. Home Create still opens the two-start coach flow, personal/recent stories still open review, and Explore opens the bundled collection. No project file changes, preference persistence, early microphone start, or media changes were introduced by conflict resolution. The root worktree's uncommitted Xcode formatting delta was not read, copied, reset or merged.
+
+Release generic iOS build after this merge passed (`/private/tmp/story-within-07-coach-release.log`). Final combined suite and Debug results follow.
+
+- `/private/tmp/story-within-07-coach-combined.log`: **36 workflow tests passed** (23 recording/private-library, 8 coaching, 5 demo). Native app-host playback, clock, pause/resume/replay, switching and duration checks for both unchanged MP3s remain green.
+- `/private/tmp/story-within-07-coach-debug.log`: Debug generic iOS Simulator build passed.
+- `/private/tmp/story-within-07-coach-release.log`: Release generic iOS build passed.
+- Integration tip before this handoff remains `1e93aa0`, already merged. No computer-use retries were attempted against the locked Mac. Human full-recording listening and physical device/accessibility acceptance remain pending as stated above.
