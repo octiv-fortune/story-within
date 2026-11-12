@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed local tickets: 01, 02, 03, 06, 07, 08.
-Current claimed tickets: 04 prepared paused hints and 05 interruptions/replacement protection; both code integrations are complete, with combined physical checks pending.
-Ticket 08 code/workflow acceptance is resolved; its physical consent/privacy/accessibility walkthrough remains unverified for ticket 09.
+Completed local tickets: 01, 02, 03, 04, 06, 07.
+Current claimed tickets: 05 interruptions/replacement protection (remaining device/accessibility gates) and 08 local preview presentation repair.
+Ticket 08 is reopened after a blank first-opening preview sheet; repaired build verification and user confirmation are in progress. Ticket 09 remains incomplete.
 
 ## Baseline
 
@@ -121,3 +121,10 @@ Both concrete recovery defects are fixed in source. A failed stopped-replacement
 The candidate passed **64 native workflow tests** on iOS 17.5, Debug generic iOS Simulator compilation, and Release generic iOS compilation. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-recovery-integration.log`; outputs: `/private/tmp/story-within-recovery-integration`. The only build warning was the existing nonblocking AppIntents metadata-extraction warning. Identical candidate/integration source required no duplicate full-suite run. `git diff --check` passed. The known unstaged Xcode project formatting/comments/order delta was never staged or reset; its SHA-256 remained `1b66df8e503b6b2c326fc54b4de4f03f5b0415016165f3b69438ea9cd32079b3`, and its parsed plist equals the candidate project. See [the recovery fix evidence](evidence/m1-review-fixes.md) for regression failures, successful verification, and limits.
 
 Tickets **04 and 05 remain claimed**. Physical hint/pause/resume/narration continuity; backgrounding and available interruption/route-change behavior; finalized-draft/replacement relaunch, retry, cancellation, and playback; and full VoiceOver/Dynamic Type/rendered-layout acceptance remain pending. Ticket **08 remains resolved locally for code/workflow acceptance**, with its physical consent/privacy/preview/withdrawal/accessibility walkthrough pending. Ticket **09 verification remains incomplete** until those manual gates are recorded. No signing, phone operation or installation, GitHub mutation, push, PR, or cleanup occurred in this integration step; the coordinating agent owns the separate device follow-up.
+
+
+## Latest device feedback and preview repair
+
+The user passed the requested existing-story opening, hint/resume/save/reopen, replacement cancellation and background-finalization checks, then reported a blank local-preview popup. Ticket 04 is resolved from source/tests/builds plus that physical hint sequence. Ticket 08 is reopened for the presentation defect; no preview/withdrawal success is inferred. Ticket 05 retains its remaining physical route/interruption/accessibility checks within the incomplete M1 verification gate.
+
+The UI defect was reproduced on a disposable simulator fixture on the first tap, with an empty white sheet and no content or Cancel control. A real rendered XCUITest failed on the missing heading; native preparation returned a valid private story. Application fix bde75c2 uses the optional story as the sheet presentation item. The same rendered test passed, 64 workflow tests and Debug/Release builds passed, and a signed in-place iPhone update succeeded. User first-open/cancel/reopen/confirmation/withdrawal verification is pending. The retained rendered regression runner is being finalized independently of production targets.
