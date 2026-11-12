@@ -4,6 +4,255 @@ import SwiftData
 
 @MainActor
 final class StoryWorkflowTests: XCTestCase {
+    func testStoppedReplacementSurvivesFailedCommitRelaunchAndRetryKeeping() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var failWrites = false
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio, commitChanges: { context in
+            if failWrites { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording()
+        try audio.speak("original voice", lasting: 2)
+        workflow.stopRecording()
+        workflow.title = "The moon garden"
+        workflow.creatorName = "Mama"
+        workflow.theme = "Kindness"
+        workflow.sourceLanguage = "English"
+        workflow.transcript = "My manual text"
+        workflow.savePrivately()
+        let original = try XCTUnwrap(workflow.currentStory)
+        await workflow.startReplacementRecording(confirmed: true)
+        try audio.speak("new finalized voice", lasting: 7)
+        let capture = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Captures"), includingPropertiesForKeys: nil).first)
+        failWrites = true
+        workflow.stopRecording()
+        XCTAssertNotNil(workflow.errorMessage)
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        XCTAssertEqual(reopened.currentStory, original)
+        XCTAssertTrue(reopened.hasPendingRecording)
+        reopened.retryKeepingRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertFalse(reopened.hasPendingRecording)
+        let retained = try XCTUnwrap(reopened.currentStory)
+        XCTAssertEqual(retained.id, original.id)
+        XCTAssertEqual(retained.audioName, capture.lastPathComponent)
+        XCTAssertEqual(retained.duration, 7)
+        XCTAssertEqual(retained.createdAt, original.createdAt)
+        XCTAssertEqual(retained.title, "The moon garden")
+        XCTAssertEqual(retained.creatorName, "Mama")
+        XCTAssertEqual(retained.theme, "Kindness")
+        XCTAssertEqual(retained.sourceLanguage, "English")
+        XCTAssertEqual(retained.transcript, "My manual text")
+        XCTAssertTrue(retained.isSaved)
+        XCTAssertEqual(retained.visibility, "private")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("new finalized voice ".utf8))
+        let relaunchedAgain = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        relaunchedAgain.openStory(id: original.id)
+        XCTAssertEqual(relaunchedAgain.currentStory, retained)
+        XCTAssertFalse(relaunchedAgain.hasPendingRecording)
+    }
+
+    func testCancellingRecoveredReplacementKeepsOriginalAndRemovesOnlyOwnedRecovery() async throws {
+        let (root, original) = try await makeFailedStoppedReplacement()
+        let unrelated = root.appendingPathComponent("Recordings/\(original.id.uuidString)--not-a-take.m4a")
+        try Data("unrelated recording".utf8).write(to: unrelated)
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        reopened.cancelReplacementRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertFalse(reopened.hasPendingRecording)
+        XCTAssertEqual(reopened.currentStory, original)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("original voice ".utf8))
+        XCTAssertEqual(try Data(contentsOf: unrelated), Data("unrelated recording".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Recovery/\(original.id.uuidString).json").path))
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Captures").path).isEmpty)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Recordings").path).sorted(), [original.audioName, unrelated.lastPathComponent].sorted())
+        let relaunchedAgain = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        relaunchedAgain.openStory(id: original.id)
+        XCTAssertEqual(relaunchedAgain.currentStory, original)
+        XCTAssertFalse(relaunchedAgain.hasPendingRecording)
+    }
+
+    func testMissingReplacementRecoveryDetailsNeverTurnRetryIntoAudioCleanup() async throws {
+        let (root, original) = try await makeFailedStoppedReplacement()
+        let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+        try FileManager.default.removeItem(at: marker)
+        let source = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Captures"), includingPropertiesForKeys: nil).first)
+        let promoted = root.appendingPathComponent("Recordings/\(source.lastPathComponent)")
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        reopened.retryKeepingRecording()
+        XCTAssertNotNil(reopened.errorMessage)
+        XCTAssertTrue(reopened.hasPendingRecording)
+        XCTAssertFalse(reopened.canLeaveReview)
+        XCTAssertEqual(reopened.currentStory, original)
+        XCTAssertEqual(try Data(contentsOf: source), Data("new finalized voice ".utf8))
+        XCTAssertEqual(try Data(contentsOf: promoted), Data("new finalized voice ".utf8))
+        reopened.cancelReplacementRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory, original)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: promoted.path))
+    }
+
+    func testCorruptOrForeignReplacementRecoveryDetailsPreserveAllVoicesAndOwnedPaths() async throws {
+        for corruption in ["invalid JSON", "foreign identity", "foreign path"] {
+            let (root, original) = try await makeFailedStoppedReplacement()
+            let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+            let unrelated = root.appendingPathComponent("outside.m4a")
+            try Data("other recording".utf8).write(to: unrelated)
+            if corruption == "invalid JSON" {
+                try Data("broken recovery details".utf8).write(to: marker)
+            } else {
+                var fields = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: marker)) as? [String: Any])
+                if corruption == "foreign identity" { fields["storyID"] = UUID().uuidString }
+                else { fields["originalAudioName"] = "../outside.m4a" }
+                try JSONSerialization.data(withJSONObject: fields).write(to: marker)
+            }
+            let source = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Captures"), includingPropertiesForKeys: nil).first)
+            let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+            reopened.openStory(id: original.id)
+            reopened.retryKeepingRecording()
+            XCTAssertNotNil(reopened.errorMessage, corruption)
+            XCTAssertTrue(reopened.hasPendingRecording, corruption)
+            XCTAssertEqual(reopened.currentStory, original, corruption)
+            XCTAssertEqual(try Data(contentsOf: source), Data("new finalized voice ".utf8), corruption)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: marker.path), corruption)
+            reopened.cancelReplacementRecording()
+            XCTAssertNil(reopened.errorMessage, corruption)
+            XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("original voice ".utf8), corruption)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path), corruption)
+            XCTAssertEqual(try Data(contentsOf: unrelated), Data("other recording".utf8), corruption)
+        }
+    }
+
+    func testReplacementRecoveryCanKeepThePromotedCopyWhenItsCaptureIsUnavailable() async throws {
+        let (root, original) = try await makeFailedStoppedReplacement()
+        let source = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Captures"), includingPropertiesForKeys: nil).first)
+        try FileManager.default.removeItem(at: source)
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        reopened.retryKeepingRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory?.audioName, source.lastPathComponent)
+        XCTAssertEqual(reopened.currentStory?.duration, 7)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("new finalized voice ".utf8))
+    }
+
+    func testMarkerLeftAfterSuccessfulReplacementCommitOnlyFinishesCleanupAndIsDeletedWithStory() async throws {
+        let (root, original) = try await makeFailedStoppedReplacement()
+        let captures = root.appendingPathComponent("Captures")
+        let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+        let markerBytes = try Data(contentsOf: marker)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: captures.path) }
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: captures.path)
+        reopened.retryKeepingRecording()
+        XCTAssertNotNil(reopened.errorMessage)
+        let committed = try XCTUnwrap(reopened.currentStory)
+        XCTAssertEqual(committed.duration, 7)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: marker.path))
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: captures.path)
+        let relaunchedAgain = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        relaunchedAgain.openStory(id: original.id)
+        XCTAssertFalse(relaunchedAgain.isReplacingRecording)
+        relaunchedAgain.retryKeepingRecording()
+        XCTAssertNil(relaunchedAgain.errorMessage)
+        XCTAssertEqual(relaunchedAgain.currentStory, committed)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(relaunchedAgain.currentAudioURL)), Data("new finalized voice ".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+        // Simulate a successful metadata commit followed immediately by termination.
+        try markerBytes.write(to: marker)
+        relaunchedAgain.openStory(id: original.id)
+        relaunchedAgain.deleteCurrentStory(confirmed: true)
+        XCTAssertNil(relaunchedAgain.errorMessage)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+        XCTAssertTrue(relaunchedAgain.stories.isEmpty)
+    }
+
+    func testOlderStaleReplacementMarkerNeverReappliesAnEarlierVoice() async throws {
+        let (root, original) = try await makeFailedStoppedReplacement()
+        let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+        let oldMarker = try Data(contentsOf: marker)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        workflow.openStory(id: original.id)
+        workflow.retryKeepingRecording()
+        XCTAssertNil(workflow.errorMessage)
+        await workflow.startReplacementRecording(confirmed: true)
+        try audio.speak("latest kept voice", lasting: 11)
+        workflow.stopRecording()
+        let latest = try XCTUnwrap(workflow.currentStory)
+        XCTAssertNil(workflow.errorMessage)
+        try oldMarker.write(to: marker)
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        reopened.openStory(id: original.id)
+        reopened.retryKeepingRecording()
+        XCTAssertNotNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory, latest)
+        XCTAssertEqual(reopened.currentStory?.duration, 11)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("latest kept voice ".utf8))
+        reopened.cancelReplacementRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory, latest)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+    }
+
+    func testCancellingUnknownReplacementRecoveryPreservesOriginalBackupWhenRetainedAudioIsMissingOrCorrupt() async throws {
+        for corruptOriginal in [false, true] {
+            let (root, original) = try await makeFailedStoppedReplacement()
+            let retained = root.appendingPathComponent("Recordings/\(original.audioName)")
+            let backup = root.appendingPathComponent("Captures/\(original.audioName)")
+            let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+            try FileManager.default.copyItem(at: retained, to: backup)
+            if corruptOriginal { try Data().write(to: retained) }
+            else { try FileManager.default.removeItem(at: retained) }
+            try Data("unreadable marker".utf8).write(to: marker)
+            let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+            reopened.openStory(id: original.id)
+            reopened.cancelReplacementRecording()
+            XCTAssertNil(reopened.errorMessage)
+            XCTAssertEqual(reopened.currentStory, original)
+            XCTAssertEqual(try Data(contentsOf: backup), Data("original voice ".utf8))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Captures").path), [original.audioName])
+            // Once the original retained path is restored, ordinary cleanup is safe.
+            try Data(contentsOf: backup).write(to: retained)
+            let restored = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+            restored.openStory(id: original.id)
+            restored.retryKeepingRecording()
+            XCTAssertNil(restored.errorMessage)
+            XCTAssertEqual(try Data(contentsOf: XCTUnwrap(restored.currentAudioURL)), Data("original voice ".utf8))
+        }
+    }
+
+    private func makeFailedStoppedReplacement() async throws -> (URL, Story) {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var failWrites = false
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio, commitChanges: { context in
+            if failWrites { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording()
+        try audio.speak("original voice", lasting: 2)
+        workflow.stopRecording()
+        workflow.title = "My family garden"
+        workflow.transcript = "Keep my manual words"
+        workflow.savePrivately()
+        let original = try XCTUnwrap(workflow.currentStory)
+        await workflow.startReplacementRecording(confirmed: true)
+        try audio.speak("new finalized voice", lasting: 7)
+        failWrites = true
+        workflow.stopRecording()
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory, original)
+        return (root, original)
+    }
+
     func testReplacementPreservesOldPreviewOnCancelOrFailureAndRequiresFreshConsentForNewVoice() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         var failWrites = false
