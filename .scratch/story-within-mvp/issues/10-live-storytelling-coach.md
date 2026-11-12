@@ -14,22 +14,22 @@ Parent specification: [Approved Story Within specification](../spec.md) (approve
 
 ## What to build
 
-Generate real short English coaching and prepared text cues with Apple Foundation Models behind StoryCoachService. Keep the parent as author, existing real recording/review/save journey, and an explicit demo mode for devices that cannot use the system model. The app remains compatible with iOS 17; guard the real provider with OS/runtime availability.
+Generate real short English coaching and prepared text cues with Apple Foundation Models behind StoryCoachService. Keep the parent as author, existing real recording/review/save journey, and an explicit demo mode for devices that cannot use the system model. Target iOS 27 on the current iPhone 15 Pro; runtime/model availability must still be handled honestly.
 
 ## Acceptance criteria
 
 - [ ] On an eligible device with a ready model, the coach uses real on-device generation with a clear Apple Intelligence/on-device mode label. Check runtime and supported language before requests; do not promise capability from device identity alone.
-- [ ] Unsupported OS/device/model availability uses clearly labeled deterministic demo coaching, explains the limitation where useful, and never blocks recording or saving. No cloud account, API credentials, backend or third-party iOS dependency is introduced.
+- [ ] Unavailable device/model state uses clearly labeled deterministic demo coaching, explains the limitation where useful, and never blocks recording or saving. No cloud account, API credentials, backend or third-party iOS dependency is introduced.
 - [ ] Responses contain short guidance and at most one primary question, honor the parent's choices and skips, avoid whole-story writing and unsupported diagnostic/cultural claims, and preserve Start Recording at any point.
 - [ ] Prepare bounded contextual text cues before capture. Never request analysis of live narration, send audio to the model, autoplay a hint or automatically resume recording. Bound prompts to the model context window without mutating the parent's full session text.
 - [ ] Real-model errors, unavailability changes, unsupported language, invalid/oversized output and cancellation keep parent input and offer retry/continue. A failed real response is not replaced with demo guidance while presented as actual AI. Generic cue fallback remains explicitly labeled.
 - [ ] Correct all demo-specific labels/actions in the real-provider journey. Keep preferences/conversation session-only and absent from discovery metadata.
 - [ ] At the agreed application-workflow/service seam, deterministic tests cover provider selection, valid responses/cues, failure/cancellation/stale results and recording continuity. Actual supported-device model scenarios establish genuine generation and parent-authorship behavior; doubles alone do not.
-- [ ] Debug simulator and Release iOS builds and the existing 64 tests remain green, including an older available iOS 17 runtime to establish that the optional framework does not break older-device launch. Preserve existing stories/audio when updating the iPhone.
+- [ ] Debug simulator and Release iOS builds and the relevant deterministic workflow tests remain green on iOS 27. No further iOS 17 compatibility work is required. Real native-generation checks remain separate from deterministic doubles and must be verified on the iPhone 15 Pro. Preserve existing stories/audio when updating the iPhone.
 
 ## Demonstration
 
-On a supported device, enter a fictitious English tortoise idea, receive an actual contextual single-question prompt, skip/answer, prepare cues and enter the same recording/save/replay path. On an unsupported runtime show labeled demo coaching. Report actual model availability and any unperformed real-model scenarios truthfully.
+On a supported device, enter a fictitious English tortoise idea, receive an actual contextual single-question prompt, skip/answer, prepare cues and enter the same recording/save/replay path. When the system model is unavailable show labeled demo coaching. Report actual model availability and any unperformed real-model scenarios truthfully.
 
 ## Delivery constraints and verification
 
@@ -55,3 +55,6 @@ Technical blocker is the existing coach workflow, not transcription or community
 
 
 - 2026-11-12: The user explicitly chose Apple on-device English coaching first, with demo mode on unsupported devices. Prior proxy/cloud-auth requirements in historical comments are superseded for this slice. Claimed from integration 29ec22c after the unchanged native Debug simulator build passed (/private/tmp/story-within-coach-baseline.log). No cloud deployment or credential setup is performed. Full accessibility checks remain user-deferred.
+
+
+- 2026-11-12: User explicitly narrowed the demo to iOS 27 on the existing iPhone 15 Pro. Stop older-device testing and unnecessary validation work. Prior iOS17 compatibility criteria are superseded for this demo. Source review found cue-wait/busy-state issues (fixed in progress) and a newly typed thought omitted by bypass (demo-critical preservation fix pending). Simulator native generation attempted but failed to load assets; no real-model result is claimed. Prioritize final signed install and actual phone coaching/record/save/replay.

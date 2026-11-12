@@ -5,7 +5,7 @@ Approval: Specification and ticket breakdown approved by the user on 2026-11-12.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published with 14 native sub-issues and their approved blocking relationships.
 GitHub issue: https://github.com/octiv-fortune/story-within/issues/1
-Version: 0.3
+Version: 0.4
 Date: 2026-11-12 (Africa/Johannesburg)
 Source: [MVP implementation brief](../../docs/agents/product-brief.md) and the user's workflow and constraints.
 
@@ -103,7 +103,7 @@ These implementation decisions were approved in review. No changes have been mad
 ### 1. Platform and architecture
 
 - Use Swift and SwiftUI exclusively for the native application. Use Apple frameworks: AVFoundation for audio, SwiftData for local metadata, Foundation and URLSession for networking, and native accessibility facilities. Add no third-party dependencies without a demonstrated need and scope approval.
-- Target iOS 17 or later, with the primary demo on iPhone. Keep layouts usable on iPad where the existing target supports it; a separate iPad experience is outside scope. Restrict the app target to iOS rather than carrying unrequested macOS and visionOS features.
+- User-approved demo amendment (2026-11-12): target iOS 27 and the current iPhone 15 Pro. Stop iOS 17 compatibility work and older-device testing. Focus acceptance on actual on-device English coaching and the record/save/replay demo. Do not expand platform, account, hosting or validation scope beyond what this demo requires.
 - Retain the initialized Xcode project. Adjust deployment/platform settings and replace starter content only after the review gate. Avoid APIs that would raise the approved minimum OS.
 - Organize lightweight features around Home, Story Start/Coach, Recording, Review/Translation, and Libraries. Views render state and dispatch actions; application workflows coordinate services. Avoid a generic plugin, dependency-injection, or state-management framework.
 - Compose service implementations at app startup. AI mode is explicit per capability: demo, live, or unavailable. Never silently fall back to demo output after a live failure.
@@ -168,7 +168,7 @@ These implementation decisions were approved in review. No changes have been mad
 | StoryRepository | Draft/story edits, owned assets, library queries | Durable writes, stable identity, fetch/reopen/delete, meaningful errors |
 
 - Define Swift protocols and deterministic mock AI implementations before live implementations. Do not mock recording in the normal app journey. Test doubles for audio are allowed in automated workflow tests; device verification must use AVFoundation.
-- User-approved amendment (2026-11-12): implement real English coaching first using Apple Foundation Models on eligible iOS 26+ devices, behind StoryCoachService. Check runtime/model/language availability; keep the app target iOS 17+ with explicitly labeled demo coaching on unsupported devices. Do not silently switch a failed real-model response to demo output. This slice needs no cloud account, API key, authentication server or proxy. Other live cloud implementations use URLSession and a secure backend proxy. Provider credentials must not be embedded in source, app configuration shipped to devices, logs, or the app bundle. Backend endpoint, authentication/abuse controls, deployment ownership, provider capabilities, limits, and deletion/retention behavior must be established before live integration tickets are ready.
+- User-approved amendment (2026-11-12): implement real English coaching first using Apple Foundation Models on eligible iOS 26+ devices, behind StoryCoachService. Check runtime/model/language availability; the current app target is iOS 27, with explicitly labeled demo coaching if the system model is unavailable. Do not silently switch a failed real-model response to demo output. This slice needs no cloud account, API key, authentication server or proxy. Other live cloud implementations use URLSession and a secure backend proxy. Provider credentials must not be embedded in source, app configuration shipped to devices, logs, or the app bundle. Backend endpoint, authentication/abuse controls, deployment ownership, provider capabilities, limits, and deletion/retention behavior must be established before live integration tickets are ready.
 - The iOS application stays Swift-only. No backend provider or additional framework is selected by this spec; the proxy is an integration prerequisite with a separate reviewed implementation/deployment decision if this repository must supply it. A remote community backend is not a prerequisite for a private AI proxy.
 - Specify and verify the proxy request/response contract in the live-integration tickets, including request identity, service operation, language information, result provenance, error categories, upload limits, cancellation/timeout behavior, and source revision. Do not select an unverified provider model or promise language coverage now.
 - Cloud processing requires a clear, deliberate action after disclosure. Cancellation and errors preserve local content. Avoid logging recordings, full coaching conversations, transcripts, or child-specific preferences.
@@ -205,7 +205,7 @@ The user confirmed this test boundary on 2026-11-12: exercise the create → rec
 - There are no existing test targets or test conventions in the starter. Add native test targets and minimal fixture support as part of the first behavior requiring automated verification. Use Apple-provided testing tools only.
 - Use a small UI smoke journey to verify navigation, typing, recording-control presentation, review, and reopening. A workflow test using an audio double does not prove microphone capture or playback.
 - On a physical iPhone, record speech, pause, request a hint, resume, stop, play the actual audio, save, force-close/relaunch, and play again. Verify narration on both sides of the pause, permission denial, interruption/background handling, and a failed/retried save. Record observed results before claiming device readiness.
-- Check the app on the oldest available compatible simulator and the primary current simulator. If an iOS 17 runtime/device is unavailable, record that compatibility remains unverified rather than treating a newer-OS build as proof.
+- Current demo scope: compile and check iOS 27 and verify the actual iPhone 15 Pro. Older-OS/device compatibility checks are deferred by the user; historical iOS 17 results are not current release requirements.
 - Validate live coach authorship and single-question behavior with a small scenario set. Validate transcription and each offered translation direction with actual provider calls and competent speaker review. Contract fixtures do not prove language quality.
 - Deferred for the current MVP by the user on 2026-11-12: complete-journey Dynamic Type, VoiceOver, Reduce Motion, focus and touch-target/contrast verification. Retain implemented support and revisit verification later. Functional no-autoplay, empty/loading/unavailable, cancellation and retry behavior remains in scope.
 - Build after each vertical slice and before merge to the integration branch. Keep required tests green. Run a final Debug simulator build and a Release iOS compilation check; signing/device installation is an additional check when a device is available.
@@ -229,7 +229,7 @@ The user confirmed this test boundary on 2026-11-12: exercise the create → rec
 | AC-13 | M1 | Private stories are absent from community results. Local preview requires confirmation naming the voice recording and its on-device scope; cancellation preserves privacy and withdrawal removes the preview. |
 | AC-14 | M1/M2 | Demo coaching, sample transcripts/translations, and local community previews are labeled where used; no live failure silently substitutes a sample as a real result. |
 | AC-15 | M1/M2 | Save and playback work without network access, AI results, or a translation. Missing/unavailable content has a recoverable state. |
-| AC-16 | M2 coaching, amended | Eligible devices generate contextual short English coaching and prepared text cues with Apple Foundation Models on-device. Keep at most one primary question, parent authorship, explicit mode/availability, retry/continue on failure and labeled demo support on other iOS 17+ devices. No provider secrets, cloud account or proxy is required for this slice. |
+| AC-16 | M2 coaching, amended | Eligible devices generate contextual short English coaching and prepared text cues with Apple Foundation Models on-device. Keep at most one primary question, parent authorship, explicit mode/availability, retry/continue on failure and labeled demo support when the system model is unavailable on the iOS 27 app. No provider secrets, cloud account or proxy is required for this slice. |
 | AC-17 | M2 | Consented live transcription uses the parent's finalized recording, returns editable text, and preserves the recording and manual edits on timeout, cancellation, or failure. |
 | AC-18 | M2 | Translation requests use reviewed source text and a validated language direction; original and generated text are visible and manually editable. |
 | AC-19 | M2 | Transcript and translation edits survive relaunch. Source edits flag stale translations and delayed responses cannot silently overwrite newer parent work. |
@@ -291,3 +291,6 @@ The `ready-for-agent` triage label follows to-spec's convention. Specification a
 
 
 - 2026-11-12: User selected “Apple on-device coaching first — no backend or API credentials; keep demo mode on unsupported devices.” This supersedes the immediate Supabase/OpenAI coaching proposal. It does not establish African-language translation quality or silently cancel the later transcription/translation scope. Cloud setup is not executed for this slice.
+
+
+- 2026-11-12: User narrowed the demo target to iOS 27 on the existing iPhone 15 Pro and requested skipping work not necessary for that demo. Older-device compatibility, accessibility checks, and broader release-validation work are deferred. The simulator asset-loading failure is not evidence that iOS 17 caused the AI issue; genuine generation must be observed on the actual demo phone. Later language-service scope is outside this immediate demo slice.
