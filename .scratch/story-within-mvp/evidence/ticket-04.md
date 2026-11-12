@@ -31,3 +31,14 @@ The first ordered-cue run built but did not launch a test host for over four min
 - Failed pause and failed finalization never expose cues or a false paused state: passed. `/private/tmp/story-within-04-pause-failure.log`.
 
 A first full-suite run on iOS 27 also stalled before launching its test host and was interrupted after more than four minutes. Final combined verification moves to the available iOS 17.5 iPhone 15 Pro simulator (`477CD74B-6796-4DAF-9868-D9F6439EE6FE`) after merging accepted integration work. The new failed-resume regression and combined full-suite result are pending at this checkpoint.
+
+## Final combined verification
+
+Merged accepted integration `023c664` cleanly in `c76c323`, preserving ticket 08 local-preview consent, withdrawal, metadata privacy, and all accepted tests. On that combined source:
+
+- All **48 native workflow tests passed**, zero failures, on iOS 17.5 iPhone 15 Pro `477CD74B-6796-4DAF-9868-D9F6439EE6FE`. This includes the five new hint tests, failed resume keeping the paused cue/take until explicit retry, the 36 original regressions, and seven accepted local-preview tests. Log: `/private/tmp/story-within-04-combined-full-tests.log`; result: `/private/tmp/story-within-04-ios17-derived/Logs/Test/Test-StoryWithin-2026.11.12_09-14-40-+0200.xcresult`.
+- Debug iOS Simulator app and test host built as part of that run.
+- Release generic iOS build passed after the merge, `CODE_SIGNING_ALLOWED=NO`. `/private/tmp/story-within-04-combined-release.log`.
+- `git diff --check` passed. No project file, deployment target, dependency, old-schema compatibility, legacy owned audio path, or demo asset changes were introduced by ticket 04.
+
+Targeted iOS 27 checks and the complete iOS 17.5 combined suite establish SDK/workflow evidence; they do not replace the outstanding visual, VoiceOver, and new physical hint-sequence checks stated above.
