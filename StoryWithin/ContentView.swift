@@ -89,11 +89,7 @@ struct ContentView: View {
                 PersonalStoryLibrary(workflow: workflow)
             }
             .sheet(isPresented: $showingExplore) {
-                NavigationStack {
-                    ContentUnavailableView("A collection to come", systemImage: "books.vertical", description: Text("There are no community demo stories on this device yet. Your recordings remain private."))
-                        .navigationTitle("Explore Stories")
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingExplore = false } } }
-                }.tint(StoryPalette.forest)
+                ExploreStories(workflow: workflow)
             }
         }.tint(StoryPalette.forest)
     }
@@ -380,10 +376,11 @@ struct RecordingStudio: View {
             if workflow.isPlaying { workflow.pausePlayback() } else { workflow.play() }
         } label: {
             Label(workflow.isPlaying ? "Pause" : "Play", systemImage: workflow.isPlaying ? "pause.fill" : "play.fill")
+                .foregroundStyle(.white)
                 .frame(minWidth: 80, minHeight: 32)
-        }.buttonStyle(.borderedProminent)
+        }.buttonStyle(.borderedProminent).tint(StoryPalette.forest)
         Button { workflow.play(fromStart: true) } label: {
-            Label("Replay", systemImage: "arrow.counterclockwise").frame(minWidth: 80, minHeight: 32)
+            Label("Replay", systemImage: "arrow.counterclockwise").foregroundStyle(StoryPalette.forest).frame(minWidth: 80, minHeight: 32)
         }.buttonStyle(.bordered)
     }
 }
@@ -396,7 +393,7 @@ struct StoryPrimaryButton: ButtonStyle {
     }
 }
 
-private func timeLabel(_ seconds: TimeInterval) -> String {
+func timeLabel(_ seconds: TimeInterval) -> String {
     let value = max(0, Int(seconds.isFinite ? seconds : 0))
     return String(format: "%d:%02d", value / 60, value % 60)
 }
