@@ -297,6 +297,14 @@ struct RecordingStudio: View {
                             .frame(maxWidth: .infinity, minHeight: 36)
                     }.buttonStyle(StoryPrimaryButton())
                         .accessibilityHint(workflow.captureState == .paused ? "Continues the same recording." : "Takes a break without ending your story.")
+                    if workflow.captureState == .recording {
+                        Button { workflow.pauseForInspiration() } label: {
+                            Label("Pause for inspiration", systemImage: "lightbulb")
+                                .foregroundStyle(StoryPalette.forest)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                        }.buttonStyle(.bordered)
+                            .accessibilityHint("Pauses your microphone before showing an optional text cue.")
+                    }
                     Button { workflow.stopRecording() } label: {
                         Label("Stop and review", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: 44)
                     }.buttonStyle(.bordered).frame(maxWidth: .infinity)
@@ -308,9 +316,35 @@ struct RecordingStudio: View {
                 }
             }.padding(24).frame(maxWidth: .infinity)
                 .background(.white.opacity(0.8), in: RoundedRectangle(cornerRadius: 24))
+            if workflow.captureState == .paused { inspiration }
             Text("When you stop, your take is kept as a private draft before you review it. Keeping a stopped draft does not share it.")
                 .font(.footnote)
         }
+    }
+
+    private var inspiration: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(workflow.inspirationLabel).font(.headline).accessibilityAddTraits(.isHeader)
+            if let cue = workflow.currentCue {
+                Text(cue).font(.title3).fixedSize(horizontal: false, vertical: true)
+            } else if let message = workflow.inspirationMessage {
+                Text(message).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Would a little inspiration help? Show a cue whenever you choose.")
+            }
+            Text("Text only. Your microphone stays paused until you tap Resume recording.")
+                .font(.subheadline).fixedSize(horizontal: false, vertical: true)
+            if workflow.inspirationMessage == nil {
+                Button { workflow.showNextCue() } label: {
+                    Label(workflow.currentCue == nil ? "Show a cue" : "Next cue", systemImage: "lightbulb")
+                        .foregroundStyle(StoryPalette.forest)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }.buttonStyle(.bordered)
+                    .accessibilityHint("Shows the next text cue. Recording stays paused.")
+            }
+        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white, in: RoundedRectangle(cornerRadius: 20))
+            .accessibilityElement(children: .contain)
     }
 
     private func review(_ story: Story) -> some View {

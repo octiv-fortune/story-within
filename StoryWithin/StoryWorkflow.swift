@@ -97,6 +97,19 @@ final class StoryWorkflow {
     var errorMessage: String?
     private(set) var permissionDenied = false
     private(set) var isPlaying = false
+    private var cueIndex: Int?
+    private var nextCueIndex = 0
+
+    var currentCue: String? {
+        guard captureState == .paused, let cueIndex, cues.indices.contains(cueIndex) else { return nil }
+        return cues[cueIndex]
+    }
+    var inspirationMessage: String? {
+        guard captureState == .paused, let cueIndex, !cues.indices.contains(cueIndex) else { return nil }
+        return "You’ve reached the last cue. Continue in your own words, or stop to review your story."
+    }
+    var inspirationLabel: String { coaching.cueLabel.isEmpty ? "Generic cues · Demo" : coaching.cueLabel }
+    private var cues: [String] { coaching.preparedCues.isEmpty ? StoryCoaching.genericCues : coaching.preparedCues }
 
     init(storageURL: URL, audio: StoryAudio, coach: (any StoryCoachService)? = nil,
          demoLibrary: DemoLibrary? = nil,
@@ -169,6 +182,7 @@ final class StoryWorkflow {
             captureID = id; captureURL = url; finalizedDuration = nil
             currentStory = nil; title = "My new story"
             loadReviewFields()
+            cueIndex = nil; nextCueIndex = 0
             captureState = .recording
         } catch { captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
     }
@@ -189,11 +203,22 @@ final class StoryWorkflow {
         }
     }
 
+    func pauseForInspiration() {
+        if captureState == .recording { pauseRecording() }
+        showNextCue()
+    }
+
+    func showNextCue() {
+        guard captureState == .paused else { return }
+        cueIndex = nextCueIndex
+        if nextCueIndex < cues.count { nextCueIndex += 1 }
+    }
+
     func resumeRecording() {
         guard captureState == .paused else { return }
         do {
             try audio.resumeRecording()
-            captureState = .recording; errorMessage = nil
+            captureState = .recording; cueIndex = nil; errorMessage = nil
         } catch {
             errorMessage = "Recording is still paused. Resume again or stop to keep your take. \(error.localizedDescription)"
         }

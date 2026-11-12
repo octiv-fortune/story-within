@@ -764,6 +764,7 @@ final class DeterministicAudio: StoryAudio {
 @MainActor
 final class PausableAudio: StoryAudio {
     var pauseError: Error?
+    var resumeError: Error?
     var finishError: Error?
     var captureDuration: TimeInterval = 0
     var playbackTime: TimeInterval = 0
@@ -780,7 +781,10 @@ final class PausableAudio: StoryAudio {
         if let pauseError { throw pauseError }
         capturing = false
     }
-    func resumeRecording() throws { capturing = true }
+    func resumeRecording() throws {
+        if let resumeError { throw resumeError }
+        capturing = true
+    }
     func speak(_ words: String, lasting seconds: TimeInterval) throws {
         guard capturing, let outputURL else { return }
         let file = try FileHandle(forWritingTo: outputURL)
