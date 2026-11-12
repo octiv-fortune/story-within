@@ -73,6 +73,14 @@ extension StoryAudio {
     }
 }
 
+private struct ReplacementRecovery: Codable {
+    let storyID: UUID
+    let takeID: UUID
+    let originalAudioName: String
+    let duration: TimeInterval
+    var audioName: String { "\(storyID.uuidString)--\(takeID.uuidString).m4a" }
+}
+
 enum CaptureState: Equatable { case idle, requestingPermission, recording, paused, stopped, failed }
 enum ReviewExitChoice { case keepChanges, discardChanges, cancel }
 
@@ -97,6 +105,7 @@ final class StoryWorkflow {
     private var captureID: UUID?
     private var finalizedDuration: TimeInterval?
     private var replacementOriginal: Story?
+    private var unresolvedReplacementRecovery = false
     private var captureRequestID: UUID?
     var isReplacingRecording: Bool { replacementOriginal != nil }
     var captureState: CaptureState = .idle
@@ -186,11 +195,13 @@ final class StoryWorkflow {
         if captureState == .recording || captureState == .paused { _ = try? audio.finishRecording() }
         stopPlayback()
         do {
-            if let url = captureURL {
-                let name = url.deletingPathExtension().lastPathComponent
-                for relative in ["Captures/\(name).m4a", "Recordings/\(name).m4a", "Recordings/\(name).pending"] {
-                    let candidate = storageURL.appendingPathComponent(relative)
-                    if FileManager.default.fileExists(atPath: candidate.path) { try FileManager.default.removeItem(at: candidate) }
+            if let original = replacementOriginal {
+                // Cancellation is explicit: remove owned replacement/recovery copies,
+                // always retaining the original asset referenced by metadata.
+                for candidate in ownedAudioURLs(id: original.id) + [replacementRecoveryURL(id: original.id)]
+                    where candidate != audioURL(for: original) && FileManager.default.fileExists(atPath: candidate.path)
+                    && !stories.contains(where: { $0.id != original.id && audioURL(for: $0) == candidate }) {
+                    try FileManager.default.removeItem(at: candidate)
                 }
             }
             currentStory = replacementOriginal
@@ -282,11 +293,16 @@ final class StoryWorkflow {
 
     func retryKeepingRecording() {
         guard captureState != .recording, captureState != .paused, captureState != .requestingPermission else { return }
+        if unresolvedReplacementRecovery {
+            errorMessage = "The replacement recovery details are missing, unreadable, or do not match this story. Your original and recovery audio are kept. Restore the recovery details and reopen, or explicitly cancel the replacement."
+            return
+        }
         if replacementOriginal == nil, let story = currentStory, !story.audioName.hasPrefix("Captures/") {
             do {
                 // Never discard the recovery source until the promoted asset can be read.
                 try audio.validateRecording(at: audioURL(for: story))
                 try removeRedundantAudio(for: story)
+                try removeReplacementRecovery(id: story.id)
                 clearPendingCapture()
                 errorMessage = nil
             } catch { errorMessage = "Your story details and recovery audio are kept, but the retained recording could not be verified or extra audio cleanup could not finish. Restore the recording and retry keeping, or explicitly discard it. \(error.localizedDescription)" }
@@ -348,7 +364,7 @@ final class StoryWorkflow {
         let files = FileManager.default
         do {
             var owned = Set<URL>()
-            if let id = currentStory?.id ?? captureID { owned.formUnion(ownedAudioURLs(id: id)) }
+            if let id = currentStory?.id ?? captureID { owned.formUnion(ownedAudioURLs(id: id)); owned.insert(replacementRecoveryURL(id: id)) }
             if let url = captureURL { owned.insert(url) }
             // A story owns only its generated UUID assets. Other references (for
             // example, demo audio) and files still used by another story survive.
@@ -431,13 +447,20 @@ final class StoryWorkflow {
     }
 
     private func retainReplacement(of original: Story) {
-        guard let url = captureURL, let duration = finalizedDuration else { return }
+        guard let url = captureURL, let takeID = captureID, let duration = finalizedDuration else { return }
         do {
             guard duration > 0, (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else { throw StoryFailure.emptyRecording }
+            let recovery = ReplacementRecovery(storyID: original.id, takeID: takeID,
+                                               originalAudioName: original.audioName, duration: duration)
+            let recoveryURL = replacementRecoveryURL(id: original.id)
+            try FileManager.default.createDirectory(at: recoveryURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            // Register the stopped take before promotion or the metadata commit.
+            // UUIDs, rather than serialized paths, constrain recovery to owned assets.
+            try JSONEncoder().encode(recovery).write(to: recoveryURL, options: .atomic)
             let files = FileManager.default
             let recordings = storageURL.appendingPathComponent("Recordings")
             try files.createDirectory(at: recordings, withIntermediateDirectories: true)
-            let name = url.deletingPathExtension().lastPathComponent
+            let name = "\(original.id.uuidString)--\(takeID.uuidString)"
             let destination = recordings.appendingPathComponent("\(name).m4a")
             let staged = recordings.appendingPathComponent("\(name).pending")
             if files.fileExists(atPath: staged.path) { try files.removeItem(at: staged) }
@@ -453,6 +476,7 @@ final class StoryWorkflow {
             currentStory = replacement
             replacementOriginal = nil
             try removeRedundantAudio(for: replacement)
+            try removeReplacementRecovery(id: replacement.id)
             clearPendingCapture(); errorMessage = nil
         } catch {
             errorMessage = replacementOriginal != nil
@@ -489,6 +513,55 @@ final class StoryWorkflow {
 
     private func clearPendingCapture() {
         captureURL = nil; captureID = nil; finalizedDuration = nil
+        unresolvedReplacementRecovery = false
+    }
+
+    private func replacementRecoveryURL(id: UUID) -> URL {
+        storageURL.appendingPathComponent("Recovery/\(id.uuidString).json")
+    }
+
+    private func removeReplacementRecovery(id: UUID) throws {
+        let url = replacementRecoveryURL(id: id)
+        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+    }
+
+    /// Returns true when recovery must be resolved before ordinary audio cleanup.
+    private func restoreReplacementRecovery(for story: Story) -> Bool {
+        let files = FileManager.default
+        let marker = replacementRecoveryURL(id: story.id)
+        if files.fileExists(atPath: marker.path),
+           let data = try? Data(contentsOf: marker),
+           let recovery = try? JSONDecoder().decode(ReplacementRecovery.self, from: data),
+           recovery.storyID == story.id, recovery.duration.isFinite, recovery.duration > 0 {
+            // The metadata commit may have succeeded immediately before termination.
+            // A marker for an older original must never overwrite a newer retained voice.
+            if story.audioName == recovery.audioName { return false }
+            if story.audioName == recovery.originalAudioName {
+                replacementOriginal = story
+                captureID = recovery.takeID
+                finalizedDuration = recovery.duration
+                let source = storageURL.appendingPathComponent("Captures/\(recovery.audioName)")
+                let promoted = storageURL.appendingPathComponent("Recordings/\(recovery.audioName)")
+                captureURL = files.fileExists(atPath: source.path) ? source : promoted
+                errorMessage = "Your stopped replacement is kept for recovery. Retry keeping this take or cancel the replacement. Your original story is unchanged."
+                return true
+            }
+        }
+        let uncommittedReplacement = ownedAudioURLs(id: story.id).contains {
+            $0.deletingPathExtension().lastPathComponent.contains("--")
+                && $0.lastPathComponent != story.audioName
+                && files.fileExists(atPath: $0.path)
+                // A leftover capture/staging copy of the committed voice is redundant.
+                && $0.deletingPathExtension().lastPathComponent != URL(fileURLWithPath: story.audioName).deletingPathExtension().lastPathComponent
+        }
+        if files.fileExists(atPath: marker.path) || uncommittedReplacement {
+            replacementOriginal = story
+            captureID = story.id
+            unresolvedReplacementRecovery = true
+            errorMessage = "The replacement recovery details are missing, unreadable, or do not match this story. Your original and recovery audio are kept. Restore the recovery details and reopen, or explicitly cancel the replacement."
+            return true
+        }
+        return false
     }
 
     private var hasReviewableAudio: Bool {
@@ -570,7 +643,9 @@ final class StoryWorkflow {
         loadReviewFields()
         captureState = .stopped; errorMessage = nil
         clearPendingCapture()
+        replacementOriginal = nil
         if let story = currentStory {
+            if restoreReplacementRecovery(for: story) { return }
             let source = ownedAudioURLs(id: story.id)[0]
             let needsPromotion = story.audioName.hasPrefix("Captures/")
             let redundantCopyExists = ownedAudioURLs(id: story.id).contains {
@@ -578,7 +653,7 @@ final class StoryWorkflow {
             }
             do { try audio.validateRecording(at: audioURL(for: story)) }
             catch { errorMessage = "This recording is unavailable or could not be read. Your story details and text are kept. Restore the recording and retry, or record a confirmed replacement. \(error.localizedDescription)" }
-            if needsPromotion || redundantCopyExists {
+            if needsPromotion || redundantCopyExists || FileManager.default.fileExists(atPath: replacementRecoveryURL(id: story.id).path) {
                 captureID = story.id
                 captureURL = FileManager.default.fileExists(atPath: source.path) ? source : nil
                 finalizedDuration = story.duration
