@@ -1,6 +1,6 @@
 # 07: Discover and listen to original demo stories
 
-Status: needs-info
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -45,3 +45,5 @@ Depends on 01 for the app navigation and functioning shared playback boundary; d
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/8; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+- 2026-11-12: Original-publisher CC BY3.0 human recordings acquired unchanged from Storybooks Canada (Anansi and Wisdom; Goat, Dog, and Cow), with narrator/source credits, permission links and SHA256 metadata. Full Apple PCM decoding passed with nonzero signal. App playback/manual listening still require ticket verification. Ticket claimed in isolated worktree; acquisition does not by itself mark acceptance complete. Shared evidence/assets: /private/tmp/story-within-demo-audio and /private/tmp/story-within-research/demo-audio.md.

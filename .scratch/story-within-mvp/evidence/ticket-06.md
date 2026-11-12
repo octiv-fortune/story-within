@@ -1,6 +1,6 @@
 # Ticket 06 implementation evidence
 
-Implemented on `codex/story-within-ticket-06`, initially based on integration `dc2132f`, with accepted ticket 02 and the latest integration metadata through `00ed5ef` merged before final verification. This records implementation and verification; it does not resolve the ticket or claim a physical-device check.
+Implemented on `codex/story-within-ticket-06`, initially based on integration `dc2132f`, with accepted ticket 02 and the integration metadata through `00ed5ef` merged before final verification, followed by the tracker-only `0759a6a` update. This records implementation and verification; it does not resolve the ticket or claim a physical-device check.
 
 ## Delivered behavior
 
@@ -36,3 +36,5 @@ Accepted pause/resume implementation was merged from integration `3c2dc08` as `3
 - **Release generic iOS BUILD SUCCEEDED**, signing disabled: `/private/tmp/story-within-ticket06-integrated-release.log`.
 - The first post-merge attempt did not execute because automatic approval review hit a usage limit; after the user resumed, existing work and prior results were preserved, the latest metadata was merged, and both checks above completed successfully. No checks blocked by that earlier review failure are claimed to have run.
 - `git diff --check` passed. No physical-device, microphone, VoiceOver, or visual-layout result is claimed by this ticket.
+
+Integration advanced to `0759a6a` during evidence recording; its only difference was the ticket 07 tracker claim. This was also merged. Application/test source is identical to the final passing 23-test and Release checks, so no redundant run was needed.
