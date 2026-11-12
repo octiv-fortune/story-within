@@ -3,8 +3,8 @@
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
 Completed tickets: 01 (GitHub #2), 03 (GitHub #4), 06 (GitHub #7), resolved locally.
-Current claimed tickets: 02, 07; ticket 02 code is integrated pending physical continuity verification, while ticket 07 has a code candidate awaiting integration and manual listening.
-Demo content and listening verification remain owned by ticket 07; candidate/code completion alone does not establish audible playback.
+Current claimed tickets: 02, 07; both have integrated code. The user reports recording works perfectly; corrected playback colors require device recheck before ticket 02 resolution. Ticket 07 still requires human full-recording listening.
+Demo content and listening verification remain owned by ticket 07; code/native playback success alone does not establish human listening.
 
 ## Baseline
 
@@ -46,11 +46,19 @@ All **31 native workflow tests** passed on iOS 27.0, including all accepted reco
 
 Ticket 03 is resolved locally against the approved workflow criteria. The explicit user exception permits native patterns after Mobbin transport failures; coach-reference inspection remains deferred. A locked Mac blocked interactive CUA, so typing/navigation, rendered layout, full Dynamic Type/VoiceOver traversal, and physical microphone checks remain unverified. No phone, GitHub, or additional source merge was performed in this checkpoint.
 
+## Ticket 07 integration and playback contrast checkpoint
+
+Merged candidate `1009f9f1266c687dbfa8c3c3889b614235784ac8` via no-ff merge `0d556cb81e7f9fbe40d8c50f586ba0f79b06398f`. It includes accepted 02/03/06 and the user-reported playback contrast fix. The conflict-free committed tree exactly matched the reviewed candidate. Read-only bundled demo assets remain separate from personal SwiftData/assets, and the coordinating review found no concrete defect in loader/player/credits behavior. The known root project-file formatting delta was preserved byte-for-byte and left unstaged; its parsed plist equals the committed candidate project.
+
+Both unchanged human MP3 recordings retain original publisher permission/source links, CC BY 3.0 license, separate author/narrator credits, and SHA256 metadata. The combined **36 native workflow tests** passed, including real AVAudioPlayer playback/clock/pause/replay/switch/duration plus all accepted recording/library/coaching cases. The subsequent styling-only change explicitly gives both personal/demo prominent Play/Pause labels white foreground with forest tint, and Replay forest labels. Debug simulator and Release iOS builds passed afterward; no behavioral suite rerun was needed for color properties. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket07.log`; outputs: `/private/tmp/story-within-integration-ticket07`. See [ticket 07](issues/07-discover-and-play-demo-stories.md) and its [evidence](evidence/ticket-07.md).
+
+Ticket 07 remains **claimed** pending human full-recording listening and device playback/credits checks. The user clarified that recording works perfectly and only playback colors were illegible; ticket 02 remains **claimed** until the corrected controls are rechecked. No physical/visual/VoiceOver/full Dynamic Type success is inferred from builds or automated playback. The coordinating agent owns corrected phone installation and the user follow-up. No phone or GitHub action occurred in this checkpoint.
+
 ## Current frontier
 
-- 02: Pause/resume code is integrated and claimed; conclusive audio continuity still requires physical iPhone verification before resolution.
+- 02: Pause/resume code is integrated and claimed. The user reports recording works perfectly; the corrected playback label colors await device recheck before resolution.
 - 03: Two starts and session-only deterministic demo coaching are integrated and resolved locally. The user-approved native-pattern exception and deferred Mobbin/interactive verification remain recorded.
 - 06: Editing/managing personal stories is integrated and resolved locally; physical/visual/accessibility checks remain explicitly unclaimed as documented.
-- 07: Demo discovery/playback is claimed, with a code candidate awaiting integration and manual listening. Attribution/permission and content/playback verification must be established from its evidence; audible playback is not inferred from code/tests.
+- 07: Demo discovery/playback and the shared playback contrast correction are integrated and claimed. Human full-recording listening and rendered device playback/credits verification remain pending; audible acceptance is not inferred from code/tests.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
