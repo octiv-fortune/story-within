@@ -1,6 +1,6 @@
 # Ticket 06 implementation evidence
 
-Implemented on `codex/story-within-ticket-06`, based on integration `dc2132f`. This records implementation and verification; it does not resolve the ticket or claim a physical-device check.
+Implemented on `codex/story-within-ticket-06`, initially based on integration `dc2132f`, with accepted ticket 02 and the latest integration metadata through `00ed5ef` merged before final verification. This records implementation and verification; it does not resolve the ticket or claim a physical-device check.
 
 ## Delivered behavior
 
@@ -27,3 +27,12 @@ Applied the approved StoryWorkflow app-workflow seam, real temporary SwiftData/a
 - Deterministic spoken-narration bytes validate asset identity/cleanup, not microphone capture, real audio decoding, voice quality, or physical-device behavior. The app continues using NativeStoryAudio/AVFoundation unchanged.
 
 Root coordination owns final review, issue/GitHub state, integration, and physical iPhone migration/playback/accessibility checks.
+
+## Final integration verification
+
+Accepted pause/resume implementation was merged from integration `3c2dc08` as `3b7821a`; only the CaptureState/canLeaveReview overlap required resolution. Both `.paused` guards and all review edit/exit behavior were retained. Latest integration `00ed5ef` (tracker metadata only) was then merged as `fdabf2e`.
+
+- **23 tests passed, zero failures**, Debug on actual iOS 17.5 iPhone 15 simulator `3F8ACDF0-BAF4-4402-AD84-7897260FA5FA`: `/private/tmp/story-within-ticket06-integrated-tests.log`, with parallel testing disabled and diagnostics collection off. This final run includes every accepted ticket 01/02 workflow regression plus the ticket 06 checks, and compiles the final native simulator source.
+- **Release generic iOS BUILD SUCCEEDED**, signing disabled: `/private/tmp/story-within-ticket06-integrated-release.log`.
+- The first post-merge attempt did not execute because automatic approval review hit a usage limit; after the user resumed, existing work and prior results were preserved, the latest metadata was merged, and both checks above completed successfully. No checks blocked by that earlier review failure are claimed to have run.
+- `git diff --check` passed. No physical-device, microphone, VoiceOver, or visual-layout result is claimed by this ticket.
