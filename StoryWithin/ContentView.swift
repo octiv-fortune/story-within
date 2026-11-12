@@ -376,10 +376,11 @@ struct RecordingStudio: View {
             if workflow.isPlaying { workflow.pausePlayback() } else { workflow.play() }
         } label: {
             Label(workflow.isPlaying ? "Pause" : "Play", systemImage: workflow.isPlaying ? "pause.fill" : "play.fill")
+                .foregroundStyle(.white)
                 .frame(minWidth: 80, minHeight: 32)
-        }.buttonStyle(.borderedProminent)
+        }.buttonStyle(.borderedProminent).tint(StoryPalette.forest)
         Button { workflow.play(fromStart: true) } label: {
-            Label("Replay", systemImage: "arrow.counterclockwise").frame(minWidth: 80, minHeight: 32)
+            Label("Replay", systemImage: "arrow.counterclockwise").foregroundStyle(StoryPalette.forest).frame(minWidth: 80, minHeight: 32)
         }.buttonStyle(.bordered)
     }
 }

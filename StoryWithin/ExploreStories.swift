@@ -108,10 +108,11 @@ private struct DemoStoryDetail: View {
             if workflow.isPlaying { workflow.pausePlayback() } else { workflow.playDemo() }
         } label: {
             Label(workflow.isPlaying ? "Pause" : "Play", systemImage: workflow.isPlaying ? "pause.fill" : "play.fill")
+                .foregroundStyle(.white)
                 .frame(minWidth: 80, minHeight: 44)
-        }.buttonStyle(.borderedProminent)
+        }.buttonStyle(.borderedProminent).tint(StoryPalette.forest)
         Button { workflow.playDemo(fromStart: true) } label: {
-            Label("Replay", systemImage: "arrow.counterclockwise").frame(minWidth: 80, minHeight: 44)
+            Label("Replay", systemImage: "arrow.counterclockwise").foregroundStyle(StoryPalette.forest).frame(minWidth: 80, minHeight: 44)
         }.buttonStyle(.bordered)
     }
 

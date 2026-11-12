@@ -54,3 +54,13 @@ Release generic iOS build after this merge passed (`/private/tmp/story-within-07
 - `/private/tmp/story-within-07-coach-debug.log`: Debug generic iOS Simulator build passed.
 - `/private/tmp/story-within-07-coach-release.log`: Release generic iOS build passed.
 - Integration tip before this handoff remains `1e93aa0`, already merged. No computer-use retries were attempted against the locked Mac. Human full-recording listening and physical device/accessibility acceptance remain pending as stated above.
+
+## User-reported playback contrast correction
+
+The user confirmed recording works and reported the Play label/background were illegible. Both personal RecordingStudio and demo detail placed `.borderedProminent` playback buttons inside a container with `.foregroundStyle(StoryPalette.ink)` and forest tint. The inherited dark foreground made the dark prominent button label insufficiently distinct. This narrowly scoped fix gives each Play/Pause Label (text and symbol) an explicit white foreground and each prominent button an explicit forest tint. Replay remains a light `.bordered` control with explicit forest label/icon. The other custom primary controls already set their foreground to white.
+
+Nominal sRGB white against forest `#183E34` computes to **11.81:1** contrast; this is expected color-pair contrast, not a screenshot measurement. No audio, state, storage, schema or workflow code changed. Existing 36 passing tests remain behavior evidence; no color-property unit tests or unrelated full-suite rerun were added. The diagnosing-bugs skill's automated reproduction/test phases are intentionally omitted for this low-impact styling correction: the real bug signal is the user's actual device report, source inspection matches that report, and an accessible rendered-UI seam is unavailable while the Mac is locked. No locked-Mac CUA retries or input workarounds were attempted. Human rendered personal/demo Play/Pause and Replay device recheck remains pending; compile success does not establish visual acceptance.
+
+- `/private/tmp/story-within-07-play-contrast-debug.log`: Debug generic iOS Simulator build passed.
+- `/private/tmp/story-within-07-play-contrast-release.log`: Release generic iOS build passed.
+- Integration tip remains `1e93aa0`, already merged. Root's project file working delta is untouched.
