@@ -234,6 +234,186 @@ final class StoryWorkflowTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("original voice ".utf8))
     }
 
+    func testSavedPrivateStoryRequiresReviewAndConfirmationBeforeLocalDiscovery() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        workflow.stopRecording()
+        workflow.title = "The moon's garden"
+        workflow.creatorName = "Mama"
+        workflow.transcript = "The hare planted a seed."
+        workflow.savePrivately()
+        let saved = try XCTUnwrap(workflow.currentStory)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        XCTAssertEqual(workflow.communityPreview, saved)
+        workflow.confirmCommunityPreview(confirmed: false)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.communityStories.map(\.id), [saved.id])
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        XCTAssertEqual(reopened.communityStories.first?.title, "The moon's garden")
+        XCTAssertEqual(reopened.communityStories.first?.creatorName, "Mama")
+        XCTAssertEqual(reopened.communityStories.first?.transcript, "The hare planted a seed.")
+        XCTAssertFalse(reopened.isPlaying)
+    }
+
+    func testWithdrawalRemovesDiscoveryAndRetainsPrivatePersonalCopyAfterRelaunch() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording(); workflow.stopRecording(); workflow.savePrivately()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        workflow.withdrawCommunityPreview()
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.currentStory?.visibility, "private")
+        XCTAssertEqual(reopened.currentStory?.isSaved, true)
+        XCTAssertTrue(reopened.communityStories.isEmpty)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("spoken narration".utf8))
+    }
+
+    func testKeepingEditsWithdrawsPreviouslyPreviewedContentUntilFreshReviewAndConsent() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording(); workflow.stopRecording(); workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        workflow.title = "A different story title"
+        workflow.transcript = "Unreviewed personal details"
+        XCTAssertEqual(workflow.communityStories.first?.title, "My new story")
+        XCTAssertFalse(workflow.prepareCommunityPreview())
+        XCTAssertTrue(workflow.resolveReviewExit(.keepChanges))
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        XCTAssertTrue(reopened.communityStories.isEmpty)
+        workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        XCTAssertEqual(workflow.communityPreview?.transcript, "Unreviewed personal details")
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertEqual(workflow.communityStories.first?.title, "A different story title")
+        XCTAssertEqual(workflow.communityStories.first?.transcript, "Unreviewed personal details")
+    }
+
+    func testEmptyOrMissingOriginalAudioCannotBecomeACommunityPreview() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording(); workflow.stopRecording(); workflow.savePrivately()
+        let audioURL = try XCTUnwrap(workflow.currentAudioURL)
+        try Data().write(to: audioURL)
+        XCTAssertFalse(workflow.prepareCommunityPreview())
+        XCTAssertNil(workflow.communityPreview)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        try Data("spoken narration".utf8).write(to: audioURL)
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        try FileManager.default.removeItem(at: audioURL)
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+    }
+
+    func testFailedPreviewAndWithdrawalWritesNeverClaimChangedVisibility() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var storageUnavailable = false
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio(), commitChanges: { context in
+            if storageUnavailable { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording(); workflow.stopRecording(); workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        storageUnavailable = true
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertTrue(try StoryWorkflow(storageURL: root, audio: DeterministicAudio()).communityStories.isEmpty)
+        storageUnavailable = false
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.communityStories.count, 1)
+        storageUnavailable = true
+        workflow.transcript = "Unsaved new personal content"
+        workflow.savePrivately()
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.communityStories.first?.transcript, "")
+        XCTAssertEqual(workflow.currentStory?.visibility, "localPreview")
+        workflow.withdrawCommunityPreview()
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.communityStories.count, 1)
+        XCTAssertEqual(try StoryWorkflow(storageURL: root, audio: DeterministicAudio()).communityStories.count, 1)
+        storageUnavailable = false
+        workflow.withdrawCommunityPreview()
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertEqual(workflow.currentStory?.transcript, "")
+        XCTAssertEqual(workflow.transcript, "Unsaved new personal content")
+        XCTAssertTrue(workflow.hasUnsavedReviewChanges)
+    }
+
+    func testDraftAndStaleReviewCannotBypassFreshConsentOrIncludeCoachingContext() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.coaching.begin(approach: .listener, text: "PRIVATE child preference")
+        await workflow.coaching.answer("PRIVATE coaching answer")
+        await workflow.startRecording(); workflow.stopRecording()
+        XCTAssertFalse(workflow.prepareCommunityPreview())
+        workflow.savePrivately()
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.transcript = "New personal text has not been reviewed"
+        workflow.confirmCommunityPreview(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertNil(workflow.communityPreview)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertTrue(workflow.resolveReviewExit(.discardChanges))
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        let visible = try XCTUnwrap(workflow.communityStories.first)
+        XCTAssertEqual(visible.title, "My new story")
+        XCTAssertEqual(visible.creatorName, "")
+        XCTAssertEqual(visible.theme, "")
+        XCTAssertEqual(visible.sourceLanguage, "")
+        XCTAssertEqual(visible.transcript, "")
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        XCTAssertEqual(reopened.communityStories, [visible])
+        XCTAssertNil(reopened.coaching.context)
+    }
+
+    func testDeletingAnOwnedPreviewRequiresConfirmationAndNeverDeletesBundledDemos() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        let demos = workflow.demoStories
+        await workflow.startRecording(); workflow.stopRecording(); workflow.savePrivately()
+        let audioURL = try XCTUnwrap(workflow.currentAudioURL)
+        XCTAssertTrue(workflow.prepareCommunityPreview())
+        workflow.confirmCommunityPreview(confirmed: true)
+        workflow.deleteCurrentStory(confirmed: false)
+        XCTAssertEqual(workflow.communityStories.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: audioURL.path))
+        workflow.deleteCurrentStory(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertTrue(workflow.communityStories.isEmpty)
+        XCTAssertTrue(workflow.stories.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: audioURL.path))
+        XCTAssertEqual(workflow.demoStories, demos)
+        for demo in demos {
+            workflow.openDemoStory(id: demo.id)
+            workflow.playDemo()
+            XCTAssertNil(workflow.demoPlaybackError)
+            XCTAssertTrue(workflow.isPlaying)
+        }
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        XCTAssertTrue(reopened.communityStories.isEmpty)
+        XCTAssertEqual(reopened.demoStories, demos)
+    }
+
     func testFailedDeleteRestoresOwnedAudioAndTextUntilDeletionCanBeRetried() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         var storageUnavailable = false

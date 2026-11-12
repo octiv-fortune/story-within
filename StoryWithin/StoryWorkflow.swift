@@ -15,6 +15,7 @@ struct Story: Identifiable, Equatable {
     var theme = ""
     var sourceLanguage = ""
     var transcript = ""
+    var visibilityLabel: String { visibility == "localPreview" ? "Local preview · This device only" : "Private" }
 }
 
 @Model
@@ -88,6 +89,9 @@ final class StoryWorkflow {
     var demoLibraryError: String? { demoLibrary.errorMessage }
     private(set) var selectedDemoStory: DemoStory?
     private(set) var demoPlaybackError: String?
+    /// Only explicitly confirmed, saved stories belong in the on-device collection.
+    var communityStories: [Story] { stories.filter { $0.isSaved && $0.visibility == "localPreview" } }
+    private(set) var communityPreview: Story?
     private let commitChanges: (ModelContext) throws -> Void
     private var captureURL: URL?
     private var captureID: UUID?
@@ -462,6 +466,54 @@ final class StoryWorkflow {
         captureURL = nil; captureID = nil; finalizedDuration = nil
     }
 
+    private var hasReviewableAudio: Bool {
+        guard let url = currentAudioURL,
+              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]) else { return false }
+        return values.isRegularFile == true && (values.fileSize ?? 0) > 0
+    }
+
+    @discardableResult
+    func prepareCommunityPreview() -> Bool {
+        communityPreview = nil
+        guard let story = currentStory, story.isSaved, !hasPendingRecording,
+              !hasUnsavedReviewChanges, canLeaveReview else {
+            errorMessage = "Save your reviewed changes privately before preparing a community preview."
+            return false
+        }
+        guard hasReviewableAudio else {
+            errorMessage = "The original recording is unavailable. Restore it before previewing this story."
+            return false
+        }
+        communityPreview = story
+        errorMessage = nil
+        return true
+    }
+
+    func confirmCommunityPreview(confirmed: Bool) {
+        guard confirmed else { communityPreview = nil; return }
+        guard var story = communityPreview, currentStory == story,
+              !hasUnsavedReviewChanges, !hasPendingRecording, canLeaveReview else {
+            communityPreview = nil
+            errorMessage = "Your story changed. Save privately and review it again before confirming."
+            return
+        }
+        do {
+            guard hasReviewableAudio else { throw StoryFailure.missingAudio }
+            story.visibility = "localPreview"; story.updatedAt = Date()
+            try persist(story)
+            currentStory = story; communityPreview = nil; errorMessage = nil
+        } catch { errorMessage = "Your community preview could not be kept. Visibility is unchanged; retry or cancel. \(error.localizedDescription)" }
+    }
+
+    func withdrawCommunityPreview() {
+        guard var story = currentStory, story.visibility == "localPreview" else { return }
+        do {
+            story.visibility = "private"; story.updatedAt = Date()
+            try persist(story)
+            currentStory = story; communityPreview = nil; errorMessage = nil
+        } catch { errorMessage = "The local preview could not be withdrawn. It remains visible on this device; retry. \(error.localizedDescription)" }
+    }
+
     func keepDraft() { saveCurrent(markSaved: false) }
     func savePrivately() { saveCurrent(markSaved: true) }
 
@@ -473,11 +525,14 @@ final class StoryWorkflow {
         do {
             guard let url = currentAudioURL, FileManager.default.fileExists(atPath: url.path) else { throw StoryFailure.missingAudio }
             try audio.validateRecording(at: url)
+            // Saving revised content is a private action. A new local preview always
+            // needs a fresh review and voice-recording confirmation.
+            story.visibility = "private"
             story.title = trimmed; story.isSaved = story.isSaved || markSaved; story.updatedAt = Date()
             story.creatorName = creatorName; story.theme = theme
             story.sourceLanguage = sourceLanguage; story.transcript = transcript
             try persist(story)
-            currentStory = story; title = trimmed; errorMessage = nil
+            currentStory = story; title = trimmed; communityPreview = nil; errorMessage = nil
         } catch { errorMessage = "Your changes could not be saved. Your recording is kept; retry saving. \(error.localizedDescription)" }
     }
 

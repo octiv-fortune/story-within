@@ -47,3 +47,5 @@ No remote upload, account, public URL, or cross-device sharing is implied. The p
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
 
 - 2026-11-12: Prerequisites resolved, including user-confirmed physical recording/demo playback and readable controls. Claimed next local-MVP slice in isolated worktree.
+
+- 2026-11-12: Implemented local saved-story review → original-voice/device-only confirmation → read-only local discovery → withdrawal retaining the private personal copy, with truthful visibility labels and fresh consent after kept edits. Full 43 native workflow tests passed, including all 36 prior regressions. Evidence and pending physical/privacy/VoiceOver walkthrough are recorded in [ticket 08 evidence](../evidence/ticket-08.md). Status remains claimed for root review, integration and manual acceptance; no remote issue action was performed.

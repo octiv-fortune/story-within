@@ -57,7 +57,7 @@ struct ContentView: View {
                                         Image(systemName: "waveform").font(.title2).accessibilityHidden(true)
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text(story.title).font(.headline)
-                                            Text("\(story.isSaved ? "Saved" : "Draft") · Private · \(timeLabel(story.duration))").font(.subheadline)
+                                            Text("\(story.isSaved ? "Saved" : "Draft") · \(story.visibilityLabel) · \(timeLabel(story.duration))").font(.subheadline)
                                             Text(story.updatedAt, style: .date).font(.caption)
                                         }
                                         Spacer(minLength: 0)
@@ -127,7 +127,7 @@ private struct PersonalStoryLibrary: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(story.title).font(.headline)
-                                Text("\(story.isSaved ? "Saved" : "Draft") · Private · \(timeLabel(story.duration))").font(.subheadline)
+                                Text("\(story.isSaved ? "Saved" : "Draft") · \(story.visibilityLabel) · \(timeLabel(story.duration))").font(.subheadline)
                                 if !story.creatorName.isEmpty { Text(story.creatorName).font(.subheadline) }
                                 if !story.sourceLanguage.isEmpty { Text(story.sourceLanguage).font(.subheadline) }
                                 Text(story.updatedAt, style: .date).font(.caption)
@@ -137,7 +137,7 @@ private struct PersonalStoryLibrary: View {
                     }
                 }
                 Section {
-                    Label("Private on this device. Nothing is published.", systemImage: "lock")
+                    Label("Your recordings stay on this device. Confirmed local previews also appear in Explore Stories on this device only.", systemImage: "lock")
                         .font(.footnote)
                 }
             }
@@ -160,6 +160,8 @@ struct RecordingStudio: View {
     @State private var confirmingDiscard = false
     @State private var confirmingReviewExit = false
     @State private var confirmingReplacement = false
+    @State private var showingCommunityPreview = false
+    @State private var previewStory: Story?
 
     var body: some View {
         NavigationStack {
@@ -211,7 +213,7 @@ struct RecordingStudio: View {
                 Text("Your original recording and story details stay kept until the replacement is safely stored. You can cancel the replacement. A new voice recording will be private until you review and confirm its local community preview again.")
             }
             .confirmationDialog("Keep your changes?", isPresented: $confirmingReviewExit, titleVisibility: .visible) {
-                Button("Keep changes") { leaveReview(.keepChanges) }
+                Button(workflow.currentStory?.visibility == "localPreview" ? "Keep changes privately and withdraw preview" : "Keep changes") { leaveReview(.keepChanges) }
                 Button("Discard changes", role: .destructive) { leaveReview(.discardChanges) }
                 Button("Cancel", role: .cancel) { _ = workflow.resolveReviewExit(.cancel) }
             } message: { Text("Discarding changes restores the last kept details and text. Your original recording stays in your library.") }
@@ -234,6 +236,11 @@ struct RecordingStudio: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: { Text(workflow.isReplacingRecording ? "Only the replacement take will be removed. Your original recording, story details, and review edits stay available." : "This removes this story, its text, and its owned original voice recording from this device. This cannot be undone.") }
+            .sheet(isPresented: $showingCommunityPreview) {
+                if let story = previewStory {
+                    CommunityPreviewReview(workflow: workflow, story: story)
+                }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { workflow.handleInterruption() }
             }
@@ -323,7 +330,7 @@ struct RecordingStudio: View {
     private func review(_ story: Story) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("Made with your voice.").font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
-            Label(story.isSaved ? "Saved privately on this device" : "Private draft kept on this device", systemImage: "lock.fill").font(.subheadline)
+            Label(story.visibility == "localPreview" ? "Community preview · This device only" : story.isSaved ? "Saved privately on this device" : "Private draft kept on this device", systemImage: story.visibility == "localPreview" ? "books.vertical" : "lock.fill").font(.subheadline)
             VStack(alignment: .leading, spacing: 16) {
                 Text("Original recording").font(.headline)
                 TimelineView(.periodic(from: .now, by: 0.5)) { _ in
@@ -360,8 +367,21 @@ struct RecordingStudio: View {
                 workflow.savePrivately()
                 if workflow.errorMessage == nil { workflow.stopPlayback(); dismiss() }
             } label: {
-                Label("Save privately", systemImage: "lock.fill").frame(maxWidth: .infinity, minHeight: 36)
+                Label(story.visibility == "localPreview" ? "Save changes privately and withdraw preview" : "Save privately", systemImage: "lock.fill").frame(maxWidth: .infinity, minHeight: 36)
             }.buttonStyle(StoryPrimaryButton())
+            if story.visibility == "localPreview" {
+                Text("Saving edits returns this story to private visibility. Review and confirm again to include the changed story in the local community preview.").font(.footnote)
+                Button("Withdraw local preview") { workflow.withdrawCommunityPreview() }
+                    .buttonStyle(.bordered).frame(minHeight: 44)
+            } else if story.isSaved {
+                Button {
+                    if workflow.prepareCommunityPreview() { previewStory = workflow.communityPreview; showingCommunityPreview = true }
+                } label: {
+                    Label("Review for local community preview", systemImage: "books.vertical")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }.buttonStyle(.bordered)
+                Text("Save any changes privately first. Then review the exact recording and text before confirming a preview on this device only.").font(.footnote)
+            }
             Text("You can return from Home to listen again. No account, internet, transcript, or AI result is needed.").font(.footnote)
             Button("Re-record original voice") { confirmingReplacement = true }
                 .buttonStyle(.bordered).frame(minHeight: 44).disabled(workflow.hasPendingRecording)
