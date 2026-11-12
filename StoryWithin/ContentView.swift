@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 private enum StoryPalette {
     static let forest = Color(red: 24/255, green: 62/255, blue: 52/255)
@@ -152,8 +153,24 @@ private struct RecordingStudio: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { workflow.handleInterruption() }
             }
+            .onChange(of: recordingAnnouncement) { _, announcement in
+                guard !announcement.isEmpty else { return }
+                UIAccessibility.post(notification: .announcement, argument: announcement)
+            }
             .onDisappear { workflow.stopPlayback() }
         }.tint(StoryPalette.forest)
+    }
+
+    // Observe significant service/error transitions, never elapsed-time ticks.
+    private var recordingAnnouncement: String {
+        if let error = workflow.errorMessage { return error }
+        switch workflow.captureState {
+        case .idle: return ""
+        case .requestingPermission: return "Requesting microphone access."
+        case .recording: return "Recording started."
+        case .stopped: return workflow.currentStory == nil ? "Recording stopped." : "Recording stopped. Your private draft is kept on this device."
+        case .failed: return "Recording could not finish. Review the error and retry or discard the take."
+        }
     }
 
     private var capture: some View {

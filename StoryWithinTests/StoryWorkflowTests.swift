@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import StoryWithin
 
 @MainActor
@@ -14,7 +15,7 @@ final class StoryWorkflowTests: XCTestCase {
         let recordings = root.appendingPathComponent("Recordings")
         try Data("blocked directory".utf8).write(to: recordings)
         workflow.stopRecording()
-        XCTAssertNil(workflow.currentStory)
+        let recoverableDraft = try XCTUnwrap(workflow.currentStory)
         XCTAssertNotNil(workflow.errorMessage)
         XCTAssertTrue(workflow.hasPendingRecording)
         XCTAssertFalse(workflow.canLeaveReview)
@@ -26,6 +27,7 @@ final class StoryWorkflowTests: XCTestCase {
         let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
         reopened.openStory(id: draft.id)
         XCTAssertEqual(reopened.currentStory, draft)
+        XCTAssertEqual(draft.id, recoverableDraft.id)
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("spoken narration".utf8))
     }
 
@@ -149,6 +151,98 @@ final class StoryWorkflowTests: XCTestCase {
         workflow.stopRecording()
         XCTAssertNil(workflow.errorMessage)
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("spoken narration".utf8))
+    }
+
+    func testSourceCleanupFailureRemainsOwnedAfterRelaunchAndExplicitDiscard() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let captures = root.appendingPathComponent("Captures")
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: captures.path) }
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        let original = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: captures, includingPropertiesForKeys: nil).first)
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: captures.path)
+        workflow.stopRecording()
+        let draft = try XCTUnwrap(workflow.currentStory)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("spoken narration".utf8))
+        let staging = root.appendingPathComponent("Recordings/\(draft.id.uuidString).pending")
+        try Data("retained staging narration".utf8).write(to: staging)
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: draft.id)
+        reopened.discardRecording()
+        XCTAssertNotNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory?.id, draft.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: staging.path))
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: captures.path)
+        reopened.discardRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertTrue(reopened.stories.isEmpty)
+    }
+
+    func testFailedPromotionStagingRemainsOwnedAfterRelaunchAndExplicitDiscard() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let recordings = root.appendingPathComponent("Recordings")
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: recordings.path) }
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        let original = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Captures"), includingPropertiesForKeys: nil).first)
+        let staging = recordings.appendingPathComponent(original.deletingPathExtension().lastPathComponent + ".pending")
+        try FileManager.default.createDirectory(at: recordings, withIntermediateDirectories: true)
+        try Data("partial spoken narration".utf8).write(to: staging)
+        try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: recordings.path)
+        workflow.stopRecording()
+        let draft = try XCTUnwrap(workflow.currentStory)
+        XCTAssertNotNil(workflow.errorMessage)
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: draft.id)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("spoken narration".utf8))
+        reopened.discardRecording()
+        XCTAssertNotNil(reopened.errorMessage)
+        XCTAssertEqual(reopened.currentStory?.id, draft.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: staging.path))
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: recordings.path)
+        reopened.discardRecording()
+        XCTAssertNil(reopened.errorMessage)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staging.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertTrue(reopened.stories.isEmpty)
+    }
+
+    func testFirstInstalledAppRecordingAndEditsReopenWithoutResettingItsStore() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let id = UUID(uuidString: "113F70C1-DF52-4D97-A2B5-E090CDE63D31")!
+        let originalTitle = "My first recorded family story"
+        let filename = id.uuidString + ".m4a"
+        let folder = root.appendingPathComponent("Recordings")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("original installed-app narration".utf8).write(to: folder.appendingPathComponent(filename))
+        // A compatibility fixture using the first installed app's unchanged model
+        // and bare audioName format. Assertions use only the application workflow.
+        let legacyContainer = try ModelContainer(for: StoryRecord.self, configurations:
+            ModelConfiguration(url: root.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
+        let legacyContext = ModelContext(legacyContainer)
+        let date = Date(timeIntervalSince1970: 1_795_000_000)
+        legacyContext.insert(StoryRecord(Story(id: id, title: originalTitle, audioName: filename, duration: 8,
+                                             isSaved: true, visibility: "private", createdAt: date, updatedAt: date)))
+        try legacyContext.save()
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        workflow.openStory(id: id)
+        XCTAssertEqual(workflow.title, originalTitle)
+        XCTAssertEqual(workflow.currentStory?.visibility, "private")
+        XCTAssertEqual(workflow.currentStory?.createdAt, date)
+        XCTAssertEqual(workflow.currentStory?.isSaved, true)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("original installed-app narration".utf8))
+        workflow.title = "My edited family story"
+        workflow.savePrivately()
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.title, "My edited family story")
+        XCTAssertEqual(reopened.currentStory?.id, id)
+        XCTAssertEqual(reopened.currentStory?.visibility, "private")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("original installed-app narration".utf8))
     }
 
     func testStoppedNarrationIsPrivateAndSurvivesSaveAndRelaunch() async throws {

@@ -58,3 +58,23 @@ The coordinating agent additionally inspected `/private/tmp/story-within-ticket0
 ## Remaining acceptance checks
 
 Exact iOS 17.0 runtime execution has not been verified; iOS 17.5 was the oldest available installed iOS 17 runtime used. Actual microphone denial recovery is covered deterministically at the workflow boundary, with manual system Settings verification still unrecorded. Full VoiceOver and large Dynamic Type recording/review journey verification remain unrecorded. The coordinating agent owns review, integration, issue synchronization, and completion status; this implementation does not close GitHub issues.
+
+## Review corrections: owned audio and recording announcements
+
+The two-axis review of `0499164` found that source-capture removal was ignored after promotion and that `.pending` copy files were absent from explicit discard ownership. Both could leave voice data behind while reporting deletion success. The same review identified missing VoiceOver announcements for recording state changes.
+
+The corrected workflow saves the finalized private draft against its already durable `Captures/<id>.m4a` **before** creating copy/staging assets. It updates that existing draft to the final recording only after promotion. All owned capture, staging, and final paths are derived from stable story identity, including after reopening; source cleanup failures remain explicit and retain retry state. Explicit discard stages all three owned paths and restores them when removal cannot proceed. A failed promotion now remains a reopenable draft referencing the original recording, rather than depending solely on in-memory capture identity.
+
+There is **no SwiftData schema change, container reset, or data wipe**. Original installed-app bare `UUID.m4a` audio names still resolve under `Recordings`. A real temporary SwiftData compatibility fixture using that exact reference format verifies that the original saved title, identity, creation time, privacy, and narration reopen unchanged, and that a subsequent title edit survives reopening.
+
+The studio now posts native `UIAccessibility` announcements for microphone requests, recording start/stop, interruptions and errors. It observes a state/error announcement value; periodic elapsed-time changes never post announcements. This is implementation and compilation evidence; a complete physical VoiceOver walkthrough remains unrecorded.
+
+- `/private/tmp/story-within-ticket01-review-red-01.log`: actual native behavioral red for a read-only Captures directory; cleanup error was ignored and reopening/discard left the source voice file behind.
+- `/private/tmp/story-within-ticket01-review-green-01.log`: that regression passed after durable ownership and surfaced source-cleanup failures.
+- `/private/tmp/story-within-ticket01-review-red-02.log`: actual native behavioral red for a retained `.pending` file plus a real read-only Recordings failure; reopening/discard ignored the staging narration.
+- `/private/tmp/story-within-ticket01-review-green-02.log`: all 11 then-current native workflow tests passed after including staging assets in deterministic ownership.
+- `/private/tmp/story-within-ticket01-review-final-test.log`: **TEST SUCCEEDED**, 12 native iOS 17.5 workflow tests, 0 failures. Includes the original nine workflows, both filesystem/relaunch/discard regressions, and installed-app store compatibility. The source-cleanup regression also checks a retained staging copy after successful final promotion and relaunch.
+- `/private/tmp/story-within-ticket01-review-final-release.log`: **BUILD SUCCEEDED**, final reviewed Release iOS compilation.
+- `/private/tmp/story-within-ticket01-review-final-debug.log`: **BUILD SUCCEEDED**, final explicit Debug simulator build.
+
+These review checks supersede the earlier nine-test revision. They use deterministic audio at the hardware boundary and real temporary SQLite/filesystem storage; the user's earlier physical narration result remains the human device evidence. No additional user recording or data-reset action was performed for this correction.
