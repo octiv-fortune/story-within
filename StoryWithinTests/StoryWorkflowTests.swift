@@ -167,6 +167,112 @@ final class StoryWorkflowTests: XCTestCase {
     // Each case has an isolated OS-temporary workspace. Do not unlink live SQLite
     // files in defer: SwiftData may retain their descriptors until host teardown.
 
+    func testPauseResumeKeepsBothSegmentsInOneSavedNarrationAndExcludesTheBreak() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        await workflow.startRecording()
+        try audio.speak("beginning", lasting: 2)
+        workflow.pauseRecording()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertEqual(workflow.elapsedRecording, 2)
+        XCTAssertFalse(workflow.canLeaveReview)
+        audio.wait(seconds: 7)
+        XCTAssertEqual(workflow.elapsedRecording, 2)
+        workflow.resumeRecording()
+        XCTAssertEqual(workflow.captureState, .recording)
+        try audio.speak("ending", lasting: 3)
+        workflow.stopRecording()
+        let draft = try XCTUnwrap(workflow.currentStory)
+        XCTAssertEqual(draft.duration, 5)
+        workflow.savePrivately()
+        let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+        XCTAssertEqual(reopened.stories.count, 1)
+        reopened.openStory(id: draft.id)
+        XCTAssertEqual(reopened.currentStory?.duration, 5)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("beginning ending ".utf8))
+    }
+
+    func testInterruptionWhilePausedKeepsTheTakeWithoutRestartingTheMicrophone() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        await workflow.startRecording()
+        try audio.speak("before interruption", lasting: 2)
+        workflow.pauseRecording()
+        workflow.handleInterruption()
+        XCTAssertEqual(workflow.captureState, .stopped)
+        XCTAssertNotNil(workflow.errorMessage)
+        let draft = try XCTUnwrap(workflow.currentStory)
+        XCTAssertEqual(draft.duration, 2)
+        workflow.resumeRecording()
+        XCTAssertEqual(workflow.captureState, .stopped)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("before interruption ".utf8))
+    }
+
+    func testDiscardingAPausedTakeClosesCaptureBeforeStartingAnotherStory() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        await workflow.startRecording()
+        try audio.speak("discard me", lasting: 2)
+        workflow.pauseRecording()
+        workflow.discardRecording()
+        XCTAssertEqual(workflow.captureState, .idle)
+        await workflow.startRecording()
+        XCTAssertEqual(workflow.captureState, .recording)
+        try audio.speak("keep me", lasting: 3)
+        workflow.stopRecording()
+        XCTAssertEqual(workflow.stories.count, 1)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("keep me ".utf8))
+    }
+
+    func testRepeatedAndOutOfOrderActionsPreserveTheActiveNarration() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        workflow.pauseRecording(); workflow.resumeRecording(); workflow.stopRecording()
+        await workflow.startRecording()
+        workflow.resumeRecording()
+        try audio.speak("beginning", lasting: 2)
+        workflow.retryKeepingRecording()
+        XCTAssertEqual(workflow.captureState, .recording)
+        XCTAssertNil(workflow.currentStory)
+        workflow.pauseRecording(); workflow.pauseRecording()
+        await workflow.startRecording()
+        workflow.keepDraft(); workflow.savePrivately()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertNil(workflow.currentStory)
+        workflow.resumeRecording(); workflow.resumeRecording()
+        try audio.speak("ending", lasting: 3)
+        workflow.stopRecording(); workflow.stopRecording(); workflow.resumeRecording()
+        XCTAssertEqual(workflow.captureState, .stopped)
+        XCTAssertEqual(workflow.stories.count, 1)
+        XCTAssertEqual(workflow.currentStory?.duration, 5)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("beginning ending ".utf8))
+    }
+
+    func testPauseFailurePreservesFinalizationErrorAndTheTakeCanBeRecovered() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: root, audio: audio)
+        await workflow.startRecording()
+        try audio.speak("keep this narration", lasting: 2)
+        audio.pauseError = NSError(domain: "AudioBoundary", code: 1, userInfo: [NSLocalizedDescriptionKey: "Pause unavailable"])
+        audio.finishError = NSError(domain: "AudioBoundary", code: 2, userInfo: [NSLocalizedDescriptionKey: "Finalization unavailable"])
+        workflow.pauseRecording()
+        XCTAssertEqual(workflow.captureState, .failed)
+        XCTAssertNil(workflow.currentStory)
+        XCTAssertTrue(workflow.hasPendingRecording)
+        XCTAssertTrue(workflow.errorMessage?.contains("Finalization unavailable") == true)
+        audio.finishError = nil
+        workflow.retryKeepingRecording()
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.captureState, .stopped)
+        XCTAssertEqual(workflow.currentStory?.duration, 2)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("keep this narration ".utf8))
+    }
+
     func testFailedDraftWriteCanBeRetriedWithoutLosingTheTakeOrIdentity() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
@@ -466,7 +572,49 @@ final class DeterministicAudio: StoryAudio {
         outputURL = url
         try Data("spoken narration".utf8).write(to: url)
     }
+    func pauseRecording() throws { }
+    func resumeRecording() throws { }
     func finishRecording() throws -> TimeInterval { captureDuration }
+    func play(url: URL, fromStart: Bool) throws { isPlaying = true }
+    func pausePlayback() { isPlaying = false }
+    func stopPlayback() { isPlaying = false; playbackTime = 0 }
+}
+
+/// Deterministic microphone/clock boundary: only captured speech consumes duration.
+@MainActor
+final class PausableAudio: StoryAudio {
+    var pauseError: Error?
+    var finishError: Error?
+    var captureDuration: TimeInterval = 0
+    var playbackTime: TimeInterval = 0
+    var isPlaying = false
+    private var outputURL: URL?
+    private var capturing = false
+    func requestPermission() async -> Bool { true }
+    func startRecording(to url: URL) throws {
+        guard outputURL == nil else { throw CocoaError(.fileWriteFileExists) }
+        outputURL = url; capturing = true; captureDuration = 0
+        try Data().write(to: url)
+    }
+    func pauseRecording() throws {
+        if let pauseError { throw pauseError }
+        capturing = false
+    }
+    func resumeRecording() throws { capturing = true }
+    func speak(_ words: String, lasting seconds: TimeInterval) throws {
+        guard capturing, let outputURL else { return }
+        let file = try FileHandle(forWritingTo: outputURL)
+        defer { try? file.close() }
+        try file.seekToEnd()
+        try file.write(contentsOf: Data((words + " ").utf8))
+        captureDuration += seconds
+    }
+    func wait(seconds: TimeInterval) { if capturing { captureDuration += seconds } }
+    func finishRecording() throws -> TimeInterval {
+        capturing = false; outputURL = nil
+        if let finishError { throw finishError }
+        return captureDuration
+    }
     func play(url: URL, fromStart: Bool) throws { isPlaying = true }
     func pausePlayback() { isPlaying = false }
     func stopPlayback() { isPlaying = false; playbackTime = 0 }

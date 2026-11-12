@@ -54,13 +54,15 @@ protocol StoryAudio: AnyObject {
     var isPlaying: Bool { get }
     func requestPermission() async -> Bool
     func startRecording(to url: URL) throws
+    func pauseRecording() throws
+    func resumeRecording() throws
     func finishRecording() throws -> TimeInterval
     func play(url: URL, fromStart: Bool) throws
     func pausePlayback()
     func stopPlayback()
 }
 
-enum CaptureState: Equatable { case idle, requestingPermission, recording, stopped, failed }
+enum CaptureState: Equatable { case idle, requestingPermission, recording, paused, stopped, failed }
 enum ReviewExitChoice { case keepChanges, discardChanges, cancel }
 
 @MainActor
@@ -111,7 +113,7 @@ final class StoryWorkflow {
     var elapsedRecording: TimeInterval { audio.captureDuration }
     var playbackTime: TimeInterval { audio.playbackTime }
     var hasPendingRecording: Bool { captureID != nil }
-    var canLeaveReview: Bool { !hasPendingRecording && captureState != .recording && captureState != .requestingPermission }
+    var canLeaveReview: Bool { !hasPendingRecording && captureState != .recording && captureState != .paused && captureState != .requestingPermission }
     var hasUnsavedReviewChanges: Bool {
         guard let story = currentStory else { return false }
         return title != story.title || creatorName != story.creatorName || theme != story.theme
@@ -158,8 +160,34 @@ final class StoryWorkflow {
         } catch { captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
     }
 
-    func stopRecording() {
+    func pauseRecording() {
         guard captureState == .recording else { return }
+        do {
+            try audio.pauseRecording()
+            captureState = .paused; errorMessage = nil
+        } catch {
+            // If pausing cannot be confirmed, finalize rather than imply the mic is off.
+            stopRecording()
+            if let recoveryError = errorMessage {
+                errorMessage = "Recording could not pause. \(recoveryError)"
+            } else {
+                errorMessage = "Recording stopped because it could not pause. Your captured audio is kept for review. \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func resumeRecording() {
+        guard captureState == .paused else { return }
+        do {
+            try audio.resumeRecording()
+            captureState = .recording; errorMessage = nil
+        } catch {
+            errorMessage = "Recording is still paused. Resume again or stop to keep your take. \(error.localizedDescription)"
+        }
+    }
+
+    func stopRecording() {
+        guard captureState == .recording || captureState == .paused else { return }
         do {
             finalizedDuration = try audio.finishRecording()
             captureState = .stopped
@@ -168,6 +196,7 @@ final class StoryWorkflow {
     }
 
     func retryKeepingRecording() {
+        guard captureState != .recording, captureState != .paused, captureState != .requestingPermission else { return }
         if let story = currentStory, !story.audioName.hasPrefix("Captures/") {
             do {
                 try removeRedundantAudio(for: story)
@@ -177,7 +206,10 @@ final class StoryWorkflow {
             return
         }
         if finalizedDuration == nil {
-            do { finalizedDuration = try audio.finishRecording() }
+            do {
+                finalizedDuration = try audio.finishRecording()
+                captureState = .stopped
+            }
             catch { errorMessage = "This take could not be finalized. Retry or explicitly discard it. \(error.localizedDescription)"; return }
         }
         retainDraft()
@@ -192,7 +224,7 @@ final class StoryWorkflow {
     }
 
     func handleInterruption() {
-        if captureState == .recording {
+        if captureState == .recording || captureState == .paused {
             stopRecording()
             if currentStory != nil { errorMessage = "Recording stopped because audio was interrupted or the app left the screen. Your captured audio is kept as a private draft. The microphone will not restart automatically." }
         }
@@ -206,7 +238,7 @@ final class StoryWorkflow {
 
     func discardRecording() {
         audio.stopPlayback(); isPlaying = false
-        if captureState == .recording { _ = try? audio.finishRecording(); captureState = .stopped }
+        if captureState == .recording || captureState == .paused { _ = try? audio.finishRecording(); captureState = .stopped }
         var staged: [(original: URL, holding: URL)] = []
         let files = FileManager.default
         do {
