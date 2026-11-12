@@ -31,6 +31,8 @@ Use a disposable new story for replacement, deletion and permission tests. Prese
 
 ## Remaining accessibility and recovery checks
 
+One-device interruption option: the user has no second phone for an incoming-call test. Set an audible Clock alarm for about two minutes ahead **before** beginning a disposable recording. Return to Story Within, start recording, and keep the app in the foreground until the alarm sounds. Dismiss the alarm, check that capture has stopped without automatically restarting, and replay/save/reopen the captured draft. Apple lists Clock alarms among audio-session interruption sources: https://developer.apple.com/library/archive/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioInterruptions/HandlingAudioInterruptions.html. This procedure has been suggested, not yet performed or passed; record the exact observed result. It does not establish a headset route-change result.
+
 - Complete creation, capture, hint/resume, review, save/reopen, and preview/withdrawal with accessibility-size Dynamic Type and VoiceOver. Check controls remain reachable, focus and state announcements are useful, and no playback starts automatically. Test Reduce Motion and restore the original setting.
 - Check denied microphone access using the disposable workflow, then restore the original permission. A denial must give a clear recovery path without pretending to record.
 - Failed/retried save, missing/corrupt assets, preview commit failures, cancelled/failed replacement, metadata migration and owned-file deletion have deterministic workflow evidence. Hardware/storage failure injection has not been performed on the user's phone; do not equate those tests with a physical failure result.
