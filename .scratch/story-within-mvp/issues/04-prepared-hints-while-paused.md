@@ -1,6 +1,6 @@
 # 04: Request prepared inspiration without interrupting narration
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,11 +18,11 @@ A parent can pause a real narration, request the next cue prepared from coaching
 
 ## Acceptance criteria
 
-- [ ] During active capture, Pause for inspiration pauses the actual recorder before displaying the hint.
-- [ ] While paused, an explicit parent action advances an ordered cue list; cues are text-only and visibly identified as prepared demo or generic cues as appropriate.
-- [ ] No hint fetch requires a live service during capture, no hint speaks/autoplays, and viewing a cue never resumes capture automatically.
-- [ ] Exhausted or unavailable cues show a useful state while Resume and Stop remain available.
-- [ ] Workflow checks and a device narration → pause → hint → resume → stop → replay demonstration retain narration from both sides of the pause.
+- [x] During active capture, Pause for inspiration pauses the actual recorder before displaying the hint.
+- [x] While paused, an explicit parent action advances an ordered cue list; cues are text-only and visibly identified as prepared demo or generic cues as appropriate.
+- [x] No hint fetch requires a live service during capture, no hint speaks/autoplays, and viewing a cue never resumes capture automatically.
+- [x] Exhausted or unavailable cues show a useful state while Resume and Stop remain available.
+- [x] Workflow checks and a device narration → pause → hint → resume → stop → replay demonstration retain narration from both sides of the pause.
 
 ## Demonstration
 
@@ -54,3 +54,10 @@ Use native Swift/SwiftUI and Apple frameworks only. Keep recording/playback real
 - 2026-11-12: Final combined native evidence passed **48 workflow tests** on iOS 17.5, including all 43 accepted cases and five hint cases: `/private/tmp/story-within-04-combined-full-tests.log`. Release iOS compilation passed. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket04.log`; outputs: `/private/tmp/story-within-integration-ticket04`. Identical source required no duplicate full-suite run. Targeted iOS 27 passes and the documented full iOS 27 prelaunch stall remain in [ticket 04 evidence](../evidence/ticket-04.md); no reset/erase was performed.
 
 - 2026-11-12: Status remains **claimed** pending the combined physical narration → actual pause → contextual/generic hint → explicit resume → stop → replay/save sequence after ticket 05 integration. New visual layout, full Dynamic Type and VoiceOver checks remain unverified. The coordinating agent owns the full-MVP installation/user check; no phone or GitHub action occurred in this integration step.
+
+
+- 2026-11-12: The user completed the updated iPhone check including narration before a hint, Pause for inspiration, explicit cue/resume, narration afterward, save/reopen/play, and reported “Everything looks great,” identifying only the later local-preview sheet as faulty. Combined with the passing hint workflow cases and final 64-test suite, the functional hint acceptance is resolved. Full VoiceOver/accessibility-size Dynamic Type remains part of ticket 09 and is not inferred from this result.
+
+## Answer
+
+Resolved on codex/story-within-mvp after reviewed native hint integration, automated transition/exhaustion/failure checks, green builds, and the user-confirmed iPhone hint/narration journey. See [evidence](../evidence/ticket-04.md) and [current walkthrough](../evidence/ticket-09-walkthrough.md).
