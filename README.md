@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="StoryWithin/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="112" alt="Story Within app icon: an ivory book with a terracotta voice rising above it" />
+
 # Story Within
 
 ### Every voice holds a story.
