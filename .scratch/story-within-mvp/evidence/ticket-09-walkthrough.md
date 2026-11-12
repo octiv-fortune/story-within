@@ -2,6 +2,8 @@
 
 Status: in progress. This is a verification record, not a declaration of M1 readiness.
 
+Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. The final recovery fix requires fresh build/test results; the pre-fix signed build was not installed.
+
 ## Confirmed evidence
 
 - The unmodified native project built before implementation. The final ticket-05 candidate (`9113572`) passed 56 combined native tests on iPhone 13 / iOS 17.5, Debug simulator compilation, and Release iOS compilation. Logs are linked in [ticket 05 evidence](ticket-05.md).
