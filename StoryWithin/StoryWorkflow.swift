@@ -6,7 +6,7 @@ struct Story: Identifiable, Equatable {
     let id: UUID
     var title: String
     var audioName: String
-    let duration: TimeInterval
+    var duration: TimeInterval
     var isSaved: Bool
     var visibility: String
     let createdAt: Date
@@ -58,9 +58,19 @@ protocol StoryAudio: AnyObject {
     func pauseRecording() throws
     func resumeRecording() throws
     func finishRecording() throws -> TimeInterval
+    func validateRecording(at url: URL) throws
     func play(url: URL, fromStart: Bool) throws
     func pausePlayback()
     func stopPlayback()
+}
+
+extension StoryAudio {
+    // Deterministic hardware doubles validate their retained bytes at this boundary.
+    // The native adapter additionally decodes the actual audio format.
+    func validateRecording(at url: URL) throws {
+        let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+        guard values.isRegularFile == true, (values.fileSize ?? 0) > 0 else { throw StoryFailure.emptyRecording }
+    }
 }
 
 enum CaptureState: Equatable { case idle, requestingPermission, recording, paused, stopped, failed }
@@ -86,6 +96,9 @@ final class StoryWorkflow {
     private var captureURL: URL?
     private var captureID: UUID?
     private var finalizedDuration: TimeInterval?
+    private var replacementOriginal: Story?
+    private var captureRequestID: UUID?
+    var isReplacingRecording: Bool { replacementOriginal != nil }
     var captureState: CaptureState = .idle
     private(set) var currentStory: Story?
     private(set) var stories: [Story] = []
@@ -162,12 +175,43 @@ final class StoryWorkflow {
         }
     }
 
+    func startReplacementRecording(confirmed: Bool) async {
+        guard confirmed, currentStory != nil, !hasPendingRecording, canLeaveReview else { return }
+        replacementOriginal = currentStory
+        await startRecording()
+    }
+
+    func cancelReplacementRecording() {
+        guard replacementOriginal != nil else { return }
+        if captureState == .recording || captureState == .paused { _ = try? audio.finishRecording() }
+        stopPlayback()
+        do {
+            if let url = captureURL {
+                let name = url.deletingPathExtension().lastPathComponent
+                for relative in ["Captures/\(name).m4a", "Recordings/\(name).m4a", "Recordings/\(name).pending"] {
+                    let candidate = storageURL.appendingPathComponent(relative)
+                    if FileManager.default.fileExists(atPath: candidate.path) { try FileManager.default.removeItem(at: candidate) }
+                }
+            }
+            currentStory = replacementOriginal
+            replacementOriginal = nil
+            clearPendingCapture()
+            captureState = .stopped; errorMessage = nil
+        } catch { captureState = .failed; errorMessage = "Your original story is unchanged, but the replacement could not be removed. Retry cancelling. \(error.localizedDescription)" }
+    }
+
     func startRecording() async {
         guard captureState != .recording, captureState != .requestingPermission, !hasPendingRecording else { return }
         errorMessage = nil; permissionDenied = false
         stopPlayback(); selectedDemoStory = nil; demoPlaybackError = nil
         captureState = .requestingPermission
-        guard await audio.requestPermission() else {
+        let requestID = UUID()
+        captureRequestID = requestID
+        let granted = await audio.requestPermission()
+        guard captureRequestID == requestID, captureState == .requestingPermission else { return }
+        captureRequestID = nil
+        guard granted else {
+            replacementOriginal = nil
             permissionDenied = true
             captureState = .idle
             errorMessage = "Microphone access is off. Allow it in Settings to record your story."
@@ -177,14 +221,17 @@ final class StoryWorkflow {
             let folder = storageURL.appendingPathComponent("Captures")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let id = UUID()
-            let url = folder.appendingPathComponent("\(id.uuidString).m4a")
+            let assetName = replacementOriginal.map { "\($0.id.uuidString)--\(id.uuidString)" } ?? id.uuidString
+            let url = folder.appendingPathComponent("\(assetName).m4a")
             try audio.startRecording(to: url)
             captureID = id; captureURL = url; finalizedDuration = nil
-            currentStory = nil; title = "My new story"
-            loadReviewFields()
+            if replacementOriginal == nil {
+                currentStory = nil; title = "My new story"
+                loadReviewFields()
+            }
             cueIndex = nil; nextCueIndex = 0
             captureState = .recording
-        } catch { captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
+        } catch { replacementOriginal = nil; captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
     }
 
     func pauseRecording() {
@@ -235,12 +282,14 @@ final class StoryWorkflow {
 
     func retryKeepingRecording() {
         guard captureState != .recording, captureState != .paused, captureState != .requestingPermission else { return }
-        if let story = currentStory, !story.audioName.hasPrefix("Captures/") {
+        if replacementOriginal == nil, let story = currentStory, !story.audioName.hasPrefix("Captures/") {
             do {
+                // Never discard the recovery source until the promoted asset can be read.
+                try audio.validateRecording(at: audioURL(for: story))
                 try removeRedundantAudio(for: story)
                 clearPendingCapture()
                 errorMessage = nil
-            } catch { errorMessage = "Your private draft is kept, but an extra audio copy could not be removed. Retry keeping or explicitly discard it. \(error.localizedDescription)" }
+            } catch { errorMessage = "Your story details and recovery audio are kept, but the retained recording could not be verified or extra audio cleanup could not finish. Restore the recording and retry keeping, or explicitly discard it. \(error.localizedDescription)" }
             return
         }
         if finalizedDuration == nil {
@@ -273,9 +322,15 @@ final class StoryWorkflow {
     }
 
     func handleInterruption() {
+        if captureState == .requestingPermission {
+            captureRequestID = nil; replacementOriginal = nil; captureState = .idle
+            errorMessage = "Recording did not start because audio was interrupted or the app left the screen. Tap Record when you are ready. The microphone will not start automatically."
+        }
         if captureState == .recording || captureState == .paused {
             stopRecording()
-            if currentStory != nil { errorMessage = "Recording stopped because audio was interrupted or the app left the screen. Your captured audio is kept as a private draft. The microphone will not restart automatically." }
+            if errorMessage == nil, currentStory != nil {
+                errorMessage = "Recording stopped because audio was interrupted or the app left the screen. Your captured audio is kept on this device. The microphone will not restart automatically."
+            }
         }
         stopPlayback()
     }
@@ -286,6 +341,7 @@ final class StoryWorkflow {
     }
 
     func discardRecording() {
+        if isReplacingRecording { cancelReplacementRecording(); return }
         audio.stopPlayback(); isPlaying = false
         if captureState == .recording || captureState == .paused { _ = try? audio.finishRecording(); captureState = .stopped }
         var staged: [(original: URL, holding: URL)] = []
@@ -336,6 +392,7 @@ final class StoryWorkflow {
     }
 
     private func retainDraft() {
+        if let original = replacementOriginal { retainReplacement(of: original); return }
         guard let url = captureURL, let id = captureID, let duration = finalizedDuration else { return }
         do {
             guard duration > 0, (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else {
@@ -373,10 +430,52 @@ final class StoryWorkflow {
         }
     }
 
+    private func retainReplacement(of original: Story) {
+        guard let url = captureURL, let duration = finalizedDuration else { return }
+        do {
+            guard duration > 0, (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else { throw StoryFailure.emptyRecording }
+            let files = FileManager.default
+            let recordings = storageURL.appendingPathComponent("Recordings")
+            try files.createDirectory(at: recordings, withIntermediateDirectories: true)
+            let name = url.deletingPathExtension().lastPathComponent
+            let destination = recordings.appendingPathComponent("\(name).m4a")
+            let staged = recordings.appendingPathComponent("\(name).pending")
+            if files.fileExists(atPath: staged.path) { try files.removeItem(at: staged) }
+            try files.copyItem(at: url, to: staged)
+            if files.fileExists(atPath: destination.path) { try files.removeItem(at: destination) }
+            try files.moveItem(at: staged, to: destination)
+            try audio.validateRecording(at: destination)
+            var replacement = original
+            replacement.audioName = destination.lastPathComponent
+            replacement.duration = duration; replacement.visibility = "private"; replacement.updatedAt = Date()
+            // Keep the same story and authored metadata. Only the voice asset changes.
+            try persist(replacement)
+            currentStory = replacement
+            replacementOriginal = nil
+            try removeRedundantAudio(for: replacement)
+            clearPendingCapture(); errorMessage = nil
+        } catch {
+            errorMessage = replacementOriginal != nil
+                ? "The replacement has not been kept. Your original story is unchanged. Retry keeping this take or cancel the replacement. \(error.localizedDescription)"
+                : "Your replacement is kept privately, but extra audio cleanup could not finish. Retry keeping. \(error.localizedDescription)"
+        }
+    }
+
     private func ownedAudioURLs(id: UUID) -> [URL] {
-        [storageURL.appendingPathComponent("Captures/\(id.uuidString).m4a"),
-         storageURL.appendingPathComponent("Recordings/\(id.uuidString).m4a"),
-         storageURL.appendingPathComponent("Recordings/\(id.uuidString).pending")]
+        var owned = [storageURL.appendingPathComponent("Captures/\(id.uuidString).m4a"),
+                     storageURL.appendingPathComponent("Recordings/\(id.uuidString).m4a"),
+                     storageURL.appendingPathComponent("Recordings/\(id.uuidString).pending")]
+        // Replacement assets carry the stable story ID as well as a take ID, so
+        // all copies remain owned after relaunch without a schema migration.
+        for folder in ["Captures", "Recordings"] {
+            let directory = storageURL.appendingPathComponent(folder)
+            for url in (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? [] {
+                let parts = url.deletingPathExtension().lastPathComponent.components(separatedBy: "--")
+                if parts.count == 2, parts[0] == id.uuidString, UUID(uuidString: parts[1]) != nil,
+                   ["m4a", "pending"].contains(url.pathExtension) { owned.append(url) }
+            }
+        }
+        return owned
     }
 
     private func removeRedundantAudio(for story: Story) throws {
@@ -393,9 +492,9 @@ final class StoryWorkflow {
     }
 
     private var hasReviewableAudio: Bool {
-        guard let url = currentAudioURL,
-              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]) else { return false }
-        return values.isRegularFile == true && (values.fileSize ?? 0) > 0
+        guard let url = currentAudioURL else { return false }
+        do { try audio.validateRecording(at: url); return true }
+        catch { return false }
     }
 
     @discardableResult
@@ -450,6 +549,7 @@ final class StoryWorkflow {
         guard !trimmed.isEmpty else { errorMessage = "Give your story a title before saving."; return }
         do {
             guard let url = currentAudioURL, FileManager.default.fileExists(atPath: url.path) else { throw StoryFailure.missingAudio }
+            try audio.validateRecording(at: url)
             // Saving revised content is a private action. A new local preview always
             // needs a fresh review and voice-recording confirmation.
             story.visibility = "private"
@@ -476,11 +576,13 @@ final class StoryWorkflow {
             let redundantCopyExists = ownedAudioURLs(id: story.id).contains {
                 $0 != currentAudioURL && FileManager.default.fileExists(atPath: $0.path)
             }
+            do { try audio.validateRecording(at: audioURL(for: story)) }
+            catch { errorMessage = "This recording is unavailable or could not be read. Your story details and text are kept. Restore the recording and retry, or record a confirmed replacement. \(error.localizedDescription)" }
             if needsPromotion || redundantCopyExists {
                 captureID = story.id
                 captureURL = FileManager.default.fileExists(atPath: source.path) ? source : nil
                 finalizedDuration = story.duration
-                errorMessage = "Your private draft is kept. Retry keeping to finish audio promotion or cleanup, or explicitly discard it."
+                if errorMessage == nil { errorMessage = "Your private draft is kept. Retry keeping to finish audio promotion or cleanup, or explicitly discard it." }
             }
         }
     }
@@ -524,7 +626,8 @@ final class StoryWorkflow {
             let records = try context.fetch(FetchDescriptor<StoryRecord>())
             if let record = records.first(where: { $0.id == story.id }) {
                 record.title = story.title; record.audioName = story.audioName
-                record.isSaved = story.isSaved; record.visibility = story.visibility; record.updatedAt = story.updatedAt
+                record.duration = story.duration; record.visibility = story.visibility
+                record.isSaved = story.isSaved; record.updatedAt = story.updatedAt
                 record.creatorName = story.creatorName; record.theme = story.theme
                 record.sourceLanguage = story.sourceLanguage; record.transcript = story.transcript
             } else { context.insert(StoryRecord(story)) }
