@@ -1,6 +1,6 @@
 # 01: Record, privately save, and replay a story
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,14 +18,14 @@ A parent can open a minimal branded Home, enter a simple recording studio, recor
 
 ## Acceptance criteria
 
-- [ ] The existing project builds for iOS with an iOS 17 minimum, iPhone-first layouts, Apple frameworks only, and no unrequested desktop/visionOS targets; any unavailable oldest-OS runtime is recorded as a verification gap.
-- [ ] Home provides Create a Story and recent-story/empty states; Explore may show a truthful empty local collection until demo content is supplied. New drafts receive editable default titles and stable identity without requiring AI.
-- [ ] The first record action explains microphone access; granting it captures audible speech, while denial/restriction shows recovery guidance without entering a false recording state.
-- [ ] Stop finalizes actual audio into durable app storage and a private recoverable draft before review reports success. Empty or failed recordings cannot be saved as successful narration.
-- [ ] Review provides play, pause, replay, elapsed time/duration, title editing, and private save. Starting capture stops playback; no audio autoplays.
-- [ ] A stopped draft and a saved story both reopen after relaunch with the same owned recording and identity. Home can reopen recent stories; saving succeeds without network or generated text.
-- [ ] A failed audio/metadata write reports failure and retains recoverable narration for retry. Back/discard requires an explicit keep/discard choice and does not silently erase a finalized take.
-- [ ] A native workflow test exercises record-result → stop → private save → reopen using deterministic audio results and real temporary local storage; device verification separately captures and replays actual speech.
+- [x] The existing project builds for iOS with an iOS 17 minimum, iPhone-first layouts, Apple frameworks only, and no unrequested desktop/visionOS targets; any unavailable oldest-OS runtime is recorded as a verification gap.
+- [x] Home provides Create a Story and recent-story/empty states; Explore may show a truthful empty local collection until demo content is supplied. New drafts receive editable default titles and stable identity without requiring AI.
+- [x] The first record action explains microphone access; granting it captures audible speech, while denial/restriction shows recovery guidance without entering a false recording state.
+- [x] Stop finalizes actual audio into durable app storage and a private recoverable draft before review reports success. Empty or failed recordings cannot be saved as successful narration.
+- [x] Review provides play, pause, replay, elapsed time/duration, title editing, and private save. Starting capture stops playback; no audio autoplays.
+- [x] A stopped draft and a saved story both reopen after relaunch with the same owned recording and identity. Home can reopen recent stories; saving succeeds without network or generated text.
+- [x] A failed audio/metadata write reports failure and retains recoverable narration for retry. Back/discard requires an explicit keep/discard choice and does not silently erase a finalized take.
+- [x] A native workflow test exercises record-result → stop → private save → reopen using deterministic audio results and real temporary local storage; device verification separately captures and replays actual speech.
 
 ## Demonstration
 
@@ -47,3 +47,15 @@ Keep this slice narrow: one recording format, a default title, simple Home/revie
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/2; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+## Answer
+
+Resolved on 2026-11-12. Merge commit `383e0639dd00a5cf08343294c1d7cbde7e670e44` integrates reviewed source `9cefefe8e16ff2340c124f767c4815fd254f8e1a` from `codex/story-within-ticket-01` into `codex/story-within-mvp`, preserving implementation `0499164` and device evidence `8c101da`. The no-ff merge had no conflicts and its tree exactly matched the reviewed candidate. Independent Standards and Spec reviewers reported their findings resolved after rechecking the final correction.
+
+The app now records real speech, retains a durable private draft, supports review/title editing/private save, and reopens the same story and narration. Failure/retry and explicit discard retain ownership of original, staging, and final audio paths. See the [implementation and verification evidence](../evidence/ticket-01.md), including inspected Mobbin references and installed-store compatibility coverage.
+
+Verification: all 12 native application-workflow tests passed on actual iOS 17.5 / iPhone 13 simulator with deterministic audio results and real temporary storage (`/private/tmp/story-within-ticket01-review-final-test.log`). Reviewed Debug simulator and Release iOS builds passed. The merged integration passed the generic Debug iOS Simulator build with signing disabled: `/private/tmp/story-within-integration-ticket01.log`; outputs: `/private/tmp/story-within-integration-ticket01`. The first sandboxed attempt could not access required CoreSimulator/Swift macro services; its log is `/private/tmp/story-within-integration-ticket01-sandbox.log`. The same build passed with host access. No source changes or full test-suite rerun were necessary after the identical-tree merge.
+
+The user confirmed audible original audio plus edited-title/audio persistence after close/reopen on a physical iPhone 15 Pro, iOS 27.0.1. That installed build preceded the final failure-recovery corrections; those corrections passed the workflow and build checks above. iOS 17.5 is the accepted oldest available runtime; exact iOS 17.0 remains unavailable. Microphone-denial/restriction recovery is verified deterministically; manual Settings recovery remains unrecorded. Native recording-state announcements and Home accessibility-size layout were checked as documented, but the complete physical VoiceOver and large Dynamic Type studio/review journeys remain unverified. These limits are retained for subsequent verification and are not inferred from test doubles.
+
+Local ticket resolution only; GitHub publication/closure remains with the coordinating agent.
