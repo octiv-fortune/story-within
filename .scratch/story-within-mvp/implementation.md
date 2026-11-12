@@ -3,7 +3,7 @@
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
 Completed local tickets: 01, 02, 03, 06, 07, 08.
-Current claimed tickets: 04 prepared paused hints (code integrated, physical hint sequence pending) and 05 interruptions/replacement protection (final combined integration pending).
+Current claimed tickets: 04 prepared paused hints and 05 interruptions/replacement protection; both code integrations are complete, with combined physical checks pending.
 Ticket 08 code/workflow acceptance is resolved; its physical consent/privacy/accessibility walkthrough remains unverified for ticket 09.
 
 ## Baseline
@@ -73,9 +73,9 @@ Ticket 04 remains **claimed** pending the combined physical hint/pause/resume/na
 ## Current frontier
 
 - 04: Prepared hints are integrated and claimed; the combined physical hint sequence remains pending.
-- 05: Interruption/replacement protection is claimed; final combined integration is pending against the accepted ticket 04 tip.
+- 05: Interruption/replacement protection is integrated and claimed; physical backgrounding, available interruption/route-change, replacement recovery/playback and accessibility checks remain pending.
 - 08: Explicit on-device local preview/withdrawal is integrated and resolved locally; physical consent/privacy/accessibility walkthrough remains unverified.
-- 09: Final local-MVP verification still needs ticket 05 final integration and the recorded combined manual/device/accessibility acceptance checks, including ticket 04's hint sequence. Existing user-confirmed recording, readable controls and both-demo playback are retained.
+- 09: Final local-MVP verification needs the recorded combined manual/device/accessibility acceptance checks, including ticket 04's hint sequence and ticket 05's interruption/replacement sequence. Existing user-confirmed recording, readable controls and both-demo playback are retained.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
 
@@ -88,3 +88,14 @@ Current claimed frontier:04 prepared paused hints;05 interruptions/replacement p
 After ticket 08 integration: 08 is resolved locally; current claimed implementation frontier is 04/05. The new-flow manual consent/privacy/accessibility checks remain for 09 rather than being inferred from code acceptance.
 
 After ticket 04 integration: 04 remains claimed for the combined physical hint sequence; 05 final combined integration is pending. The accepted source tip is available to ticket 05 without duplicating the full suite for an identical source merge.
+
+
+## Ticket 05 integration checkpoint
+
+Merged reviewed candidate `91135728c649c20773966e97fc36afdb1335fff0` via no-ff merge `d5cfdd064f9f8be953731560c58673e9cdef76d2`. The conflict-free committed tree exactly matched the reviewed/tested candidate, including accepted ticket 04/08 source and current tracking metadata. Original narration survives cancelled or failed replacement; successful replacement retains story identity and authored metadata, commits new duration/voice, and returns visibility to private pending fresh local-preview consent. Corrupt/missing audio and interruption recovery have the candidate evidence recorded below; follow-up review identified a potential failed-replacement relaunch recovery defect that remains unresolved.
+
+The reviewed candidate passed **56 native tests** on iOS 17.5 and Debug simulator/Release iOS compilation. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket05.log`; outputs: `/private/tmp/story-within-integration-ticket05`. The sandboxed attempt failed because Swift macro services were unavailable; the same build passed with host access, with only the existing nonblocking AppIntents warning. Identical candidate/integration source required no duplicate full-suite run. The known unstaged Xcode project comments/formatting/order delta was preserved byte-for-byte and its parsed plist equals the committed project. See [ticket 05](issues/05-protect-recordings-and-recover.md) and its [evidence](evidence/ticket-05.md).
+
+Ticket 05 remains **claimed** pending physical backgrounding, available audio interruption/route-change scenarios, finalized-draft reopen, replacement playback/cancellation, and combined VoiceOver/Dynamic Type walkthroughs. Ticket 04's physical hint sequence and ticket 09's combined manual acceptance remain pending. No phone installation, GitHub change, push, or issue closure occurred in this checkpoint.
+
+Follow-up review flagged a potential failed-replacement relaunch recovery defect after this integration; investigation/correction remains with the coordinator. This checkpoint records integration/build evidence only and does not resolve ticket 05 or authorize phone installation.

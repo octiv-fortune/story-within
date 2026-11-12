@@ -46,3 +46,12 @@ Accepted ticket 04 source (`1ca4b49`) merged as `2bf226b`; the recording-start c
 - Both final builds report only the existing nonblocking AppIntents metadata warning. `git diff --check` passes. No new dependencies, schema fields, or store reset.
 
 The ticket remains claimed for coordinator review and physical validation. No real microphone-interruption, route-change, or replacement VoiceOver result is claimed by these tests. Existing user-confirmed phone narration/pause-resume/playback and older-store preservation are inherited evidence, not new ticket-05 checks.
+
+
+## Coordinator integration checkpoint
+
+Reviewed candidate `91135728c649c20773966e97fc36afdb1335fff0` was merged conflict-free into `codex/story-within-mvp` as `d5cfdd064f9f8be953731560c58673e9cdef76d2` with an identical committed tree. The merged generic Debug iOS Simulator build passed with `CODE_SIGNING_ALLOWED=NO`: `/private/tmp/story-within-integration-ticket05.log`; derived outputs: `/private/tmp/story-within-integration-ticket05`. The first sandboxed attempt could not use Swift macro services (`/private/tmp/story-within-integration-ticket05-sandbox.log`); the unchanged build passed with host access and only the existing AppIntents metadata warning. Candidate final test/Debug/Release evidence above remains applicable to the identical source; no duplicate test-suite pass is claimed.
+
+The existing root Xcode project comments/formatting/order change remains unstaged, byte-for-byte preserved, and semantically identical to the committed plist. Ticket 05 remains claimed for the physical/manual checks above. See the [implementation checkpoint](../implementation.md#ticket-05-integration-checkpoint). No phone, GitHub, push, or closure action occurred.
+
+Follow-up review identified a potential failed-replacement relaunch recovery defect. The coordinator will investigate/correct it; this checkpoint does not establish that scenario as accepted and ticket 05 remains claimed.
