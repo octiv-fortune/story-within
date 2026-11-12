@@ -95,6 +95,12 @@ The independent Standards review found no documented-rule breach and one nonbloc
 
 GitHub issues #3 (ticket 02, pause/resume) and #8 (ticket 07, demo listening) were closed separately after verifying exact titles and the recorded user feedback. Later recovery, hint, preview and complete accessibility acceptance gates remain open; no dependency relationships were changed. Clean integrated worktrees 01, 02, 03, 06, 07 and 08 were removed with branches retained. A subsequent environment restart cleared the remaining temporary worktrees/logs; committed source and evidence summaries remain intact.
 
+## Updated iPhone acceptance checkpoint
+
+Reviewed recovery source `f839c99`, integrated via `b339313`, passed 64 native tests, Debug simulator and Release iOS compilation, an integration Debug simulator build, and a signed Debug iOS build. The in-place iPhone update succeeded after one transient network-disconnection retry. No app data reset or schema migration was performed. The user has been asked to check existing-story opening plus a disposable story's hints/resume, save/reopen, replacement cancellation, background finalization and local preview/withdrawal. Results remain pending, alongside full VoiceOver/Dynamic Type and remaining physical recovery checks. See [the walkthrough](evidence/ticket-09-walkthrough.md). Tickets 04/05 remain claimed; ticket 09 remains incomplete; M2 retains its external prerequisites.
+
+The clean, integrated recovery worktree was removed; missing temporary registrations from the environment restart were pruned. All implementation branches were retained. Only the pre-existing unstaged Xcode project formatting delta is intended to remain in the root working tree after committing this checkpoint.
+
 
 ## Ticket 05 integration checkpoint
 

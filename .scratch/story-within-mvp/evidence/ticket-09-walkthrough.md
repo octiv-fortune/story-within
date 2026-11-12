@@ -2,7 +2,15 @@
 
 Status: in progress. This is a verification record, not a declaration of M1 readiness.
 
-Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. The final recovery fix requires fresh build/test results; the pre-fix signed build was not installed.
+Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. Fresh final build/test results were subsequently obtained as recorded below; the pre-fix signed build was not installed.
+
+## Final reviewed build checkpoint
+
+The recovery fixes (`6a73f29`, `f839c99`) are integrated via `b339313`. All **64 native tests** passed on iOS 17.5, and fresh Debug simulator/Release iOS compilation passed. The identical integration source passed another generic Debug simulator build. Actual completion excerpts and environment identifiers are retained in [review-fix evidence](m1-review-fixes.md).
+
+A signed Debug iOS build passed (`/private/tmp/story-within-final-device-build.log`). The in-place iPhone update initially failed when the network device connection dropped; one retry succeeded, reporting the existing app bundle ID and `App installed`. The installed source matches the reviewed integration source; no app uninstall, data reset, schema migration, or provisioning change was performed. The previous user recordings have not been manually rechecked in this new version yet.
+
+The user has been asked to verify existing-story opening and a new disposable story's hint/resume/save/reopen, replacement cancellation, background finalization, and local-preview/withdrawal journey. These results are **pending**. Full VoiceOver, accessibility-size Dynamic Type, available route interruption, denied microphone access and physical failed-save checks remain open. Neither M1 readiness nor full specification completion is declared.
 
 ## Confirmed evidence
 
