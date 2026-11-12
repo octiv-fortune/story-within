@@ -8,6 +8,129 @@ final class StoryCoachingTests: XCTestCase {
         folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     }
 
+    func testPauseForInspirationPausesCaptureBeforeShowingContextualCueAndResumesOnlyOnRequest() async throws {
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: folder, audio: audio)
+        await workflow.prepareCoachedRecording(approach: .idea, text: "A magical tortoise")
+        await workflow.startRecording()
+        try audio.speak("beginning", lasting: 2)
+        XCTAssertNil(workflow.currentCue)
+        workflow.pauseForInspiration()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertEqual(workflow.currentCue, "Begin with your starting point: A magical tortoise")
+        XCTAssertEqual(workflow.inspirationLabel, "Prepared cues · Demo")
+        XCTAssertFalse(workflow.isPlaying)
+        try audio.speak("not captured", lasting: 8)
+        XCTAssertEqual(workflow.elapsedRecording, 2)
+        workflow.resumeRecording()
+        XCTAssertNil(workflow.currentCue)
+        XCTAssertEqual(workflow.captureState, .recording)
+        try audio.speak("ending", lasting: 3)
+        workflow.stopRecording()
+        workflow.savePrivately()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        let reopened = try StoryWorkflow(storageURL: folder, audio: PausableAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.currentStory?.duration, 5)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("beginning ending ".utf8))
+        XCTAssertNil(reopened.currentCue)
+        XCTAssertTrue(reopened.coaching.preparedCues.isEmpty)
+    }
+
+    func testGenericCuesAdvanceOnlyWhilePausedAndExhaustionLeavesResumeAndStopAvailable() async throws {
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
+        workflow.showNextCue()
+        XCTAssertNil(workflow.currentCue)
+        await workflow.startRecording()
+        workflow.showNextCue()
+        XCTAssertNil(workflow.currentCue)
+        workflow.pauseForInspiration()
+        XCTAssertEqual(workflow.inspirationLabel, "Generic cues · Demo")
+        XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
+        workflow.showNextCue()
+        XCTAssertEqual(workflow.currentCue, "Give your character a small choice.")
+        workflow.resumeRecording()
+        XCTAssertNil(workflow.currentCue)
+        workflow.pauseRecording()
+        XCTAssertNil(workflow.currentCue)
+        workflow.showNextCue()
+        XCTAssertEqual(workflow.currentCue, "Find an ending that feels right to you.")
+        workflow.showNextCue()
+        XCTAssertNil(workflow.currentCue)
+        XCTAssertEqual(workflow.inspirationMessage, "You’ve reached the last cue. Continue in your own words, or stop to review your story.")
+        workflow.showNextCue()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertFalse(workflow.isPlaying)
+        workflow.resumeRecording()
+        XCTAssertNil(workflow.inspirationMessage)
+        XCTAssertEqual(workflow.captureState, .recording)
+        workflow.stopRecording()
+        XCTAssertNotNil(workflow.currentStory)
+        XCTAssertNil(workflow.currentCue)
+    }
+
+    func testUnavailablePreparationUsesLabeledGenericCuesWithoutCallingCoachDuringCapture() async throws {
+        let coach = UnavailableCueCoach()
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: coach)
+        await workflow.prepareCoachedRecording(approach: .idea, text: "A tortoise")
+        XCTAssertEqual(coach.preparationRequests, 1)
+        await workflow.startRecording()
+        workflow.pauseForInspiration()
+        XCTAssertEqual(workflow.inspirationLabel, "Generic cues · Demo preparation unavailable")
+        XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
+        workflow.showNextCue()
+        XCTAssertEqual(workflow.currentCue, "Give your character a small choice.")
+        XCTAssertEqual(coach.preparationRequests, 1)
+        XCTAssertEqual(workflow.captureState, .paused)
+        workflow.stopRecording()
+        XCTAssertNotNil(workflow.currentStory)
+        XCTAssertNil(workflow.currentCue)
+    }
+
+    func testFailedPauseNeverDisplaysACueOrFalselyReportsPausedCapture() async throws {
+        for finalizationFails in [false, true] {
+            let audio = PausableAudio()
+            audio.pauseError = CocoaError(.fileWriteUnknown)
+            if finalizationFails { audio.finishError = CocoaError(.fileWriteUnknown) }
+            let workflow = try StoryWorkflow(storageURL: folder.appendingPathComponent(UUID().uuidString), audio: audio)
+            await workflow.startRecording()
+            try audio.speak("kept beginning", lasting: 2)
+            workflow.pauseForInspiration()
+            XCTAssertEqual(workflow.captureState, finalizationFails ? .failed : .stopped)
+            XCTAssertNotNil(workflow.errorMessage)
+            XCTAssertNil(workflow.currentCue)
+            XCTAssertNil(workflow.inspirationMessage)
+            workflow.showNextCue()
+            XCTAssertNil(workflow.currentCue)
+            if !finalizationFails {
+                XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("kept beginning ".utf8))
+            }
+        }
+    }
+
+    func testFailedResumeKeepsCueAndPausedTakeUntilExplicitRetryOrStop() async throws {
+        let audio = PausableAudio()
+        let workflow = try StoryWorkflow(storageURL: folder, audio: audio)
+        await workflow.startRecording()
+        try audio.speak("beginning", lasting: 2)
+        workflow.pauseForInspiration()
+        audio.resumeError = CocoaError(.fileWriteUnknown)
+        workflow.resumeRecording()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
+        try audio.speak("not captured", lasting: 8)
+        XCTAssertEqual(workflow.elapsedRecording, 2)
+        audio.resumeError = nil
+        workflow.resumeRecording()
+        XCTAssertEqual(workflow.captureState, .recording)
+        XCTAssertNil(workflow.currentCue)
+        XCTAssertNil(workflow.errorMessage)
+        try audio.speak("ending", lasting: 3)
+        workflow.stopRecording()
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("beginning ending ".utf8))
+    }
+
     func testIdeaEntersContextualDemoCoachingWithoutWritingTheStory() async throws {
         let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio())
         await workflow.coaching.begin(approach: .idea, text: "A magical tortoise in a moonlit garden")
@@ -137,12 +260,15 @@ final class StoryCoachingTests: XCTestCase {
 }
 
 
-private struct UnavailableCueCoach: StoryCoachService {
+@MainActor
+private final class UnavailableCueCoach: StoryCoachService {
+    private(set) var preparationRequests = 0
     let modeLabel = "Demo coaching · On this device"
     func respond(to context: StoryCoachContext) async throws -> StoryCoachReply {
         try await DemoStoryCoachService().respond(to: context)
     }
     func prepareCues(for context: StoryCoachContext?) async throws -> [String] {
+        preparationRequests += 1
         throw CocoaError(.fileReadUnknown)
     }
 }
