@@ -331,6 +331,12 @@ final class StoryWorkflow {
         return true
     }
 
+    func prepareRecordingWithoutCues() {
+        guard !hasPendingRecording, captureState != .requestingPermission else { return }
+        coaching.useGenericCues()
+        prepareNewRecording()
+    }
+
     func prepareNewRecording() {
         guard !hasPendingRecording else { return }
         stopPlayback()

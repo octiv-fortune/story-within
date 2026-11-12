@@ -128,6 +128,121 @@ final class OnDeviceCoachingTests: XCTestCase {
         workflow.stopRecording()
     }
 
+    func testCanceledCuePreparationPreservesParentInputWithoutPretendingPreparationSucceeded() async throws {
+        let model = ControlledStoryModel()
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: StoryCoachProvider.select(model: model))
+        await workflow.coaching.begin(approach: .idea, text: "A tortoise in my garden")
+        model.failure = CancellationError()
+        let prepared = await workflow.prepareCoachedRecording(thought: "She rests first")
+        XCTAssertFalse(prepared)
+        XCTAssertTrue(workflow.coaching.preparedCues.isEmpty)
+        XCTAssertFalse(workflow.coaching.isPreparingCues)
+        XCTAssertEqual(workflow.coaching.parentAnswers, ["She rests first"])
+        XCTAssertEqual(workflow.captureState, .idle)
+        model.failure = nil
+        let retried = await workflow.prepareCoachedRecording()
+        XCTAssertTrue(retried)
+        await workflow.startRecording()
+        XCTAssertEqual(workflow.captureState, .recording)
+        workflow.stopRecording()
+    }
+
+    func testParentCanRecordWithoutWaitingAndLateModelCuesCannotReplaceTheirPausedHint() async throws {
+        let model = ControlledStoryModel()
+        model.holdCues = true
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: StoryCoachProvider.select(model: model))
+        await workflow.coaching.begin(approach: .idea, text: "A tortoise who rests")
+        let preparation = Task { await workflow.prepareCoachedRecording(thought: "Keep her gentle") }
+        await model.waitForCueRequest()
+        XCTAssertTrue(workflow.coaching.isPreparingCues)
+        workflow.prepareRecordingWithoutCues()
+        XCTAssertFalse(workflow.coaching.isPreparingCues)
+        await workflow.startRecording()
+        workflow.pauseForInspiration()
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
+        XCTAssertEqual(workflow.inspirationLabel, "Generic cues · Not AI-generated")
+        model.finishCues()
+        let stalePreparationApplied = await preparation.value
+        XCTAssertFalse(stalePreparationApplied)
+        XCTAssertEqual(workflow.currentCue, "Introduce a character in a place you choose.")
+        XCTAssertEqual(workflow.captureState, .paused)
+        XCTAssertFalse(workflow.isPlaying)
+        XCTAssertEqual(workflow.coaching.parentAnswers, ["Keep her gentle"])
+        workflow.resumeRecording()
+        workflow.stopRecording()
+        workflow.savePrivately()
+        XCTAssertTrue(workflow.currentStory?.isSaved == true)
+    }
+
+    func testContextLimitAndUnsupportedLanguageFailuresExplainRecoveryAndKeepRecordingAvailable() async throws {
+        for (failure, expected) in [(StoryCoachFailure.contextLimit, "context limit"), (.unsupportedLanguage, "supports English")] {
+            let model = ControlledStoryModel()
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: StoryCoachProvider.select(model: model))
+            await workflow.coaching.begin(approach: .listener, text: "A calm garden story")
+            model.failure = failure
+            await workflow.coaching.answer("Keep my tortoise")
+            XCTAssertNil(workflow.coaching.reply)
+            XCTAssertTrue(workflow.coaching.errorMessage?.contains(expected) == true)
+            XCTAssertEqual(workflow.coaching.parentAnswers, ["Keep my tortoise"])
+            workflow.prepareRecordingWithoutCues()
+            await workflow.startRecording()
+            workflow.stopRecording()
+            workflow.savePrivately()
+            XCTAssertTrue(workflow.currentStory?.isSaved == true)
+        }
+    }
+
+    func testCanceledRealResponseCannotPublishLateGuidanceAndCanBeRetried() async throws {
+        let model = ControlledStoryModel()
+        model.holdReplies = true
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: StoryCoachProvider.select(model: model))
+        let request = Task { await workflow.coaching.begin(approach: .idea, text: "A tortoise who rests") }
+        await model.waitForReplyRequest()
+        request.cancel()
+        model.finishReply()
+        await request.value
+        XCTAssertNil(workflow.coaching.reply)
+        XCTAssertFalse(workflow.coaching.isResponding)
+        XCTAssertEqual(workflow.coaching.context?.initialText, "A tortoise who rests")
+        model.holdReplies = false
+        await workflow.coaching.retry()
+        XCTAssertEqual(workflow.coaching.reply?.question, "Where would you like her to go?")
+        XCTAssertNil(workflow.coaching.errorMessage)
+    }
+
+    func testAnswerOrSkipSupersedesPendingCuePreparationWithoutLeavingRecordingBusy() async throws {
+        for skip in [false, true] {
+            let model = ControlledStoryModel()
+            model.holdCues = true
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            let workflow = try StoryWorkflow(storageURL: folder, audio: DeterministicAudio(), coach: StoryCoachProvider.select(model: model))
+            await workflow.coaching.begin(approach: .idea, text: "My gentle tortoise")
+            let preparation = Task { await workflow.prepareCoachedRecording(thought: "She keeps her own pace") }
+            await model.waitForCueRequest()
+            if skip { await workflow.coaching.skip() }
+            else { await workflow.coaching.answer("No race") }
+            XCTAssertFalse(workflow.coaching.isPreparingCues)
+            model.finishCues()
+            let stalePreparationApplied = await preparation.value
+            XCTAssertFalse(stalePreparationApplied)
+            XCTAssertFalse(workflow.coaching.isPreparingCues)
+            XCTAssertEqual(workflow.captureState, .idle)
+            XCTAssertTrue(workflow.coaching.preparedCues.isEmpty)
+            XCTAssertEqual(workflow.coaching.parentAnswers, skip ? ["She keeps her own pace"] : ["She keeps her own pace", "No race"])
+            model.holdCues = false
+            let prepared = await workflow.prepareCoachedRecording()
+            XCTAssertTrue(prepared)
+            await workflow.startRecording()
+            XCTAssertEqual(workflow.captureState, .recording)
+            workflow.stopRecording()
+        }
+    }
+
 }
 
 @MainActor
@@ -135,16 +250,50 @@ private final class ControlledStoryModel: OnDeviceStoryModel {
     var availability: StoryModelAvailability = .available
     var requests: [StoryModelRequest] = []
     var failure: Error?
+    var holdReplies = false
+    private var pendingReply: CheckedContinuation<StoryCoachReply, Error>?
+    private var replyWaiter: CheckedContinuation<Void, Never>?
+    func waitForReplyRequest() async {
+        if pendingReply != nil { return }
+        await withCheckedContinuation { replyWaiter = $0 }
+    }
+    func finishReply() {
+        pendingReply?.resume(returning: replyValue)
+        pendingReply = nil
+    }
+    var holdCues = false
+    private var pendingCues: CheckedContinuation<[String], Error>?
+    private var cueWaiter: CheckedContinuation<Void, Never>?
+    func waitForCueRequest() async {
+        if pendingCues != nil { return }
+        await withCheckedContinuation { cueWaiter = $0 }
+    }
+    func finishCues() {
+        pendingCues?.resume(returning: cueValues)
+        pendingCues = nil
+    }
     var replyValue = StoryCoachReply(guidance: "Keep your gentle tortoise as you chose.", question: "Where would you like her to go?")
     var cueValues = ["Begin with your gentle tortoise.", "Choose her next step yourself.", "End in your own words."]
     func reply(to request: StoryModelRequest) async throws -> StoryCoachReply {
         requests.append(request)
         if let failure { throw failure }
+        if holdReplies {
+            return try await withCheckedThrowingContinuation {
+                pendingReply = $0
+                replyWaiter?.resume(); replyWaiter = nil
+            }
+        }
         return replyValue
     }
     func cues(for request: StoryModelRequest) async throws -> [String] {
         requests.append(request)
         if let failure { throw failure }
+        if holdCues {
+            return try await withCheckedThrowingContinuation {
+                pendingCues = $0
+                cueWaiter?.resume(); cueWaiter = nil
+            }
+        }
         return cueValues
     }
 }

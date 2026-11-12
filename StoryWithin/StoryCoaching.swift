@@ -93,6 +93,9 @@ final class StoryCoaching {
     var coachTitle: String { service.isDemo ? "Demo coach" : "On-device coach" }
     var promptProgressLabel: String { service.isDemo ? "Preparing a demo prompt…" : "Preparing an on-device prompt…" }
     var retryLabel: String { service.isDemo ? "Retry demo coaching" : "Retry on-device coaching" }
+    var modelContextMessage: String? {
+        service.isDemo ? nil : "English coaching uses a short excerpt of your starting point and recent choices. Your full thoughts stay in this session."
+    }
     var authorshipMessage: String {
         "You are the storyteller. These short \(service.isDemo ? "demo" : "on-device") prompts offer ideas; you decide what to tell."
     }
@@ -119,6 +122,8 @@ final class StoryCoaching {
             preparedCues = cues
             usingGenericCues = context == nil || context?.initialText.isEmpty == true
             cueLabel = usingGenericCues ? genericCueLabel : (service.isDemo ? "Prepared cues · Demo" : "Prepared cues · Apple Intelligence on device")
+        } catch is CancellationError {
+            return false
         } catch {
             guard requestID == id, !Task.isCancelled else { return false }
             preparedCues = Self.genericCues
@@ -176,6 +181,14 @@ final class StoryCoaching {
     private func cancelPendingReply() {
         requestID = UUID()
         isResponding = false
+        isPreparingCues = false
+    }
+
+    func useGenericCues() {
+        cancelPendingReply()
+        preparedCues = Self.genericCues
+        usingGenericCues = true
+        cueLabel = genericCueLabel
     }
 
     func reset() {

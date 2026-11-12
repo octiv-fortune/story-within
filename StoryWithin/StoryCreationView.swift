@@ -25,6 +25,9 @@ struct StoryCreationView: View {
                         if workflow.coaching.context != nil { coach } else { start }
                         Text(workflow.coaching.authorshipMessage)
                             .font(.footnote)
+                        if let message = workflow.coaching.modelContextMessage {
+                            Text(message).font(.footnote)
+                        }
                         Label("Preferences and this conversation stay in this session. They are not added to saved story details.", systemImage: "lock")
                             .font(.footnote)
                     }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
@@ -48,18 +51,27 @@ struct StoryCreationView: View {
                     if let error { UIAccessibility.post(notification: .announcement, argument: error) }
                 }
                 .safeAreaInset(edge: .bottom) {
-                    Button {
-                        editingText = false
-                        Task {
-                            if await workflow.prepareCoachedRecording(approach: approach, text: startingText, thought: answer) {
-                                showingStudio = true
+                    VStack(spacing: 10) {
+                        Button {
+                            editingText = false
+                            let thought = answer
+                            answer = ""
+                            Task {
+                                if await workflow.prepareCoachedRecording(approach: approach, text: startingText, thought: thought) {
+                                    showingStudio = true
+                                }
                             }
+                        } label: {
+                            Label(workflow.coaching.isPreparingCues ? "Preparing cues…" : "Start Recording", systemImage: "mic.fill")
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                        }.buttonStyle(StoryPrimaryButton()).disabled(workflow.coaching.isPreparingCues)
+                        if workflow.coaching.isPreparingCues {
+                            Button("Record without waiting") {
+                                workflow.prepareRecordingWithoutCues()
+                                showingStudio = true
+                            }.buttonStyle(.bordered).frame(minHeight: 44)
                         }
-                    } label: {
-                        Label(workflow.coaching.isPreparingCues ? "Preparing cues…" : "Start Recording", systemImage: "mic.fill")
-                            .frame(maxWidth: .infinity, minHeight: 36)
-                    }.buttonStyle(StoryPrimaryButton()).disabled(workflow.coaching.isPreparingCues)
-                        .padding(16).background(StoryPalette.ivory)
+                    }.padding(16).background(StoryPalette.ivory)
                 }
             }.tint(StoryPalette.forest)
         }

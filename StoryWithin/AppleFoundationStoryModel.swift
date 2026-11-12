@@ -27,9 +27,9 @@ struct AppleFoundationStoryModel: OnDeviceStoryModel {
             case .deviceNotEligible:
                 return .unavailable("This device cannot use the on-device Apple Intelligence model. Demo prompts are available.")
             case .appleIntelligenceNotEnabled:
-                return .unavailable("Apple Intelligence is turned off. Demo prompts are available; you can enable Apple Intelligence in Settings on an eligible device.")
+                return .unavailable("Apple Intelligence is turned off. Demo prompts are available. Enable Apple Intelligence in Settings on an eligible device, then reopen Story Within to check again.")
             case .modelNotReady:
-                return .unavailable("The on-device Apple Intelligence model is not ready. Demo prompts are available while the system prepares the model.")
+                return .unavailable("The on-device Apple Intelligence model is not ready. Demo prompts are available. Reopen Story Within after the system model is ready to check again.")
             @unknown default:
                 return .unavailable("The on-device Apple Intelligence model is unavailable. Demo prompts are available.")
             }
