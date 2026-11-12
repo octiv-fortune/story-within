@@ -25,7 +25,11 @@ final class NativeStoryAudio: NSObject, StoryAudio, AVAudioRecorderDelegate {
         })
         observers.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
             guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
-                  AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+                  let reason = AVAudioSession.RouteChangeReason(rawValue: raw),
+                  reason == .oldDeviceUnavailable || reason == .noSuitableRouteForCategory else { return }
+            Task { @MainActor [weak self] in self?.onInterruption?() }
+        })
+        observers.append(center.addObserver(forName: AVAudioSession.mediaServicesWereLostNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in self?.onInterruption?() }
         })
     }
@@ -87,6 +91,11 @@ final class NativeStoryAudio: NSObject, StoryAudio, AVAudioRecorderDelegate {
         let validation = try AVAudioPlayer(contentsOf: finalizedURL)
         guard validation.duration > 0 else { throw AudioFailure.emptyRecording }
         return validation.duration
+    }
+
+    func validateRecording(at url: URL) throws {
+        let decoded = try AVAudioPlayer(contentsOf: url)
+        guard decoded.duration > 0 else { throw AudioFailure.emptyRecording }
     }
 
     func play(url: URL, fromStart: Bool) throws {

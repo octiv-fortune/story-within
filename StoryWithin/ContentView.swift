@@ -159,12 +159,13 @@ struct RecordingStudio: View {
     @State private var confirmingLeave = false
     @State private var confirmingDiscard = false
     @State private var confirmingReviewExit = false
+    @State private var confirmingReplacement = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    if let story = workflow.currentStory {
+                    if let story = workflow.currentStory, !workflow.isReplacingRecording {
                         review(story)
                     } else {
                         capture
@@ -180,7 +181,7 @@ struct RecordingStudio: View {
                             }
                             if workflow.hasPendingRecording && workflow.captureState != .recording && workflow.captureState != .paused {
                                 Button("Retry keeping this take") { workflow.retryKeepingRecording() }.buttonStyle(.bordered)
-                                Button("Discard this take", role: .destructive) { confirmingDiscard = true }.frame(minHeight: 44)
+                                Button(workflow.isReplacingRecording ? "Cancel replacement" : "Discard this take", role: .destructive) { confirmingDiscard = true }.frame(minHeight: 44)
                             }
                         }.padding(18).background(.white, in: RoundedRectangle(cornerRadius: 16))
                             .accessibilityElement(children: .contain)
@@ -188,7 +189,7 @@ struct RecordingStudio: View {
                 }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
             .background(StoryPalette.ivory).foregroundStyle(StoryPalette.ink)
-            .navigationTitle(workflow.currentStory == nil ? "Your recording studio" : "Review your story")
+            .navigationTitle(workflow.isReplacingRecording ? "Replace your recording" : workflow.currentStory == nil ? "Your recording studio" : "Review your story")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -203,6 +204,12 @@ struct RecordingStudio: View {
                     }.disabled(workflow.captureState == .requestingPermission)
                 }
             }
+            .confirmationDialog("Record a replacement take?", isPresented: $confirmingReplacement, titleVisibility: .visible) {
+                Button("Record replacement") { Task { await workflow.startReplacementRecording(confirmed: true) } }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Your original recording and story details stay kept until the replacement is safely stored. You can cancel the replacement. A new voice recording will be private until you review and confirm its local community preview again.")
+            }
             .confirmationDialog("Keep your changes?", isPresented: $confirmingReviewExit, titleVisibility: .visible) {
                 Button("Keep changes") { leaveReview(.keepChanges) }
                 Button("Discard changes", role: .destructive) { leaveReview(.discardChanges) }
@@ -215,17 +222,18 @@ struct RecordingStudio: View {
                     if workflow.currentStory != nil { workflow.keepDraft() }
                     if workflow.canLeaveReview && workflow.errorMessage == nil { workflow.stopPlayback(); dismiss() }
                 }
-                Button("Discard recording", role: .destructive) { confirmingDiscard = true }
+                Button(workflow.isReplacingRecording ? "Cancel replacement" : "Discard recording", role: .destructive) { confirmingDiscard = true }
                 Button("Keep reviewing", role: .cancel) { }
-            } message: { Text("Keeping retains your recording privately on this device. Discarding permanently removes this recording.") }
-            .confirmationDialog(workflow.currentStory == nil ? "Permanently discard this recording?" : "Permanently delete this story?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                Button(workflow.currentStory == nil ? "Discard recording" : "Delete story", role: .destructive) {
+            } message: { Text(workflow.isReplacingRecording ? "Keeping safely stores the replacement privately before replacing the original. Cancelling the replacement keeps your original story and review edits." : "Keeping retains your recording privately on this device. Discarding permanently removes this recording.") }
+            .confirmationDialog(workflow.isReplacingRecording ? "Cancel this replacement take?" : workflow.currentStory == nil ? "Permanently discard this recording?" : "Permanently delete this story?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                Button(workflow.isReplacingRecording ? "Cancel replacement" : workflow.currentStory == nil ? "Discard recording" : "Delete story", role: .destructive) {
+                    if workflow.isReplacingRecording { workflow.cancelReplacementRecording(); return }
                     if workflow.currentStory != nil { workflow.deleteCurrentStory(confirmed: true) }
                     else { workflow.discardRecording() }
                     if workflow.errorMessage == nil { dismiss() }
                 }
                 Button("Cancel", role: .cancel) { }
-            } message: { Text("This removes this story, its text, and its owned original voice recording from this device. This cannot be undone.") }
+            } message: { Text(workflow.isReplacingRecording ? "Only the replacement take will be removed. Your original recording, story details, and review edits stay available." : "This removes this story, its text, and its owned original voice recording from this device. This cannot be undone.") }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { workflow.handleInterruption() }
             }
@@ -245,13 +253,19 @@ struct RecordingStudio: View {
         case .requestingPermission: return "Requesting microphone access."
         case .recording: return "Recording. Your microphone is capturing your voice."
         case .paused: return "Recording paused. Your microphone is not recording. Resume when you are ready."
-        case .stopped: return workflow.currentStory == nil ? "Recording stopped." : "Recording stopped. Your private draft is kept on this device."
+        case .stopped: return workflow.currentStory == nil ? "Recording stopped." : "Recording stopped. Your story is kept on this device."
         case .failed: return "Recording could not finish. Review the error and retry or discard the take."
         }
     }
 
     private var capture: some View {
         VStack(alignment: .leading, spacing: 24) {
+            if workflow.isReplacingRecording {
+                Label("Your original story is kept until this replacement is safely stored.", systemImage: "lock.fill")
+                    .font(.subheadline)
+                Button("Cancel replacement and return to original") { confirmingDiscard = true }
+                    .buttonStyle(.bordered).frame(minHeight: 44)
+            }
             Text(workflow.captureState == .paused ? "Take your time." : workflow.captureState == .recording ? "Your voice, your story." : "Begin with your own voice.")
                 .font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
             Text(workflow.captureState == .paused
@@ -349,6 +363,8 @@ struct RecordingStudio: View {
                 Label("Save privately", systemImage: "lock.fill").frame(maxWidth: .infinity, minHeight: 36)
             }.buttonStyle(StoryPrimaryButton())
             Text("You can return from Home to listen again. No account, internet, transcript, or AI result is needed.").font(.footnote)
+            Button("Re-record original voice") { confirmingReplacement = true }
+                .buttonStyle(.bordered).frame(minHeight: 44).disabled(workflow.hasPendingRecording)
             Button("Delete story from this device", role: .destructive) { confirmingDiscard = true }
                 .frame(minHeight: 44)
         }.task {
