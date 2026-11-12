@@ -19,7 +19,7 @@ Original bare UUID audio paths remain supported. Replacement files use stable St
 
 ## Remaining verification
 
-Native final suite, Debug simulator and Release iOS compilation results will be appended after integration. Physical backgrounding, available audio-interruption/route-change scenarios, replacement playback/cancellation, and a full replacement VoiceOver/Dynamic Type walkthrough remain for the coordinator/user. The simulator workflow doubles do not prove real microphone or audio-route behavior. Forced-termination recovery of an in-flight take is not promised. No phone installation, remote publication, issue closure, or push is performed by this implementer.
+Physical backgrounding, available audio-interruption/route-change scenarios, replacement playback/cancellation, and a full replacement VoiceOver/Dynamic Type walkthrough remain for the coordinator/user. The simulator workflow doubles do not prove real microphone or audio-route behavior. Forced-termination recovery of an in-flight take is not promised. No phone installation, remote publication, issue closure, or push is performed by this implementer.
 
 Additional TDD slices:
 
@@ -33,3 +33,16 @@ Additional TDD slices:
 - `/private/tmp/story-within-ticket05-debug.log`: **BUILD SUCCEEDED**, Debug generic iOS Simulator.
 - `/private/tmp/story-within-ticket05-release.log`: **BUILD SUCCEEDED**, Release generic iOS unsigned compilation. Both builds report only the existing nonblocking AppIntents warning.
 - Merged accepted ticket 08 (`48ec00f`) as `cb552e3`, retaining its visibility tests and UI. `/private/tmp/story-within-ticket05-red-06.log` proved a nonempty corrupt recording could pass community review and confirmation. `/private/tmp/story-within-ticket05-green-06.log`: native decoding now validates original audio both when preparing and confirming a local preview; restoration can be retried without changing story identity.
+
+
+## Final combined verification
+
+Accepted ticket 04 source (`1ca4b49`) merged as `2bf226b`; the recording-start conflict retained replacement metadata protection and the accepted cue-index reset. Cue actions, paused card, ordered exhaustion, and successful-resume dismissal remain intact. Accepted metadata-only update `2d29834` was merged after checks; it changes no application/test source.
+
+- `/private/tmp/story-within-ticket05-final-test.log`: **TEST SUCCEEDED**, **56 native tests**, zero failures, on iPhone 13 / iOS 17.5 simulator `26D1BB68-2093-4A28-B84A-495BC17B094A`. All accepted ticket 04/08 tests and all 36 initial regressions pass alongside eight ticket-05 recovery/integration tests. Corrupt-audio fixtures produce expected decoder errors, with no test failures.
+- The final integrated replacement/privacy regression confirms that cancelling or failing a replacement retains the original local preview and metadata, successful replacement retains the same story identity with new voice/duration and private visibility, an earlier review cannot confirm that new voice, and fresh local review/confirmation can.
+- `/private/tmp/story-within-ticket05-final-debug.log`: **BUILD SUCCEEDED**, Debug generic iOS Simulator.
+- `/private/tmp/story-within-ticket05-final-release.log`: **BUILD SUCCEEDED**, Release generic iOS unsigned compilation.
+- Both final builds report only the existing nonblocking AppIntents metadata warning. `git diff --check` passes. No new dependencies, schema fields, or store reset.
+
+The ticket remains claimed for coordinator review and physical validation. No real microphone-interruption, route-change, or replacement VoiceOver result is claimed by these tests. Existing user-confirmed phone narration/pause-resume/playback and older-store preservation are inherited evidence, not new ticket-05 checks.
