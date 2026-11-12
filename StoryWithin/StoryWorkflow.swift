@@ -59,6 +59,11 @@ final class StoryWorkflow {
     private let context: ModelContext
     private let storageURL: URL
     private let audio: StoryAudio
+    private let demoLibrary: DemoLibrary
+    var demoStories: [DemoStory] { demoLibrary.stories }
+    var demoLibraryError: String? { demoLibrary.errorMessage }
+    private(set) var selectedDemoStory: DemoStory?
+    private(set) var demoPlaybackError: String?
     private var captureURL: URL?
     private var captureID: UUID?
     private var finalizedDuration: TimeInterval?
@@ -70,9 +75,10 @@ final class StoryWorkflow {
     private(set) var permissionDenied = false
     private(set) var isPlaying = false
 
-    init(storageURL: URL, audio: StoryAudio) throws {
+    init(storageURL: URL, audio: StoryAudio, demoLibrary: DemoLibrary? = nil) throws {
         self.storageURL = storageURL
         self.audio = audio
+        self.demoLibrary = demoLibrary ?? .bundled()
         try FileManager.default.createDirectory(at: storageURL, withIntermediateDirectories: true)
         container = try ModelContainer(for: StoryRecord.self, configurations:
             ModelConfiguration(url: storageURL.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
@@ -97,7 +103,7 @@ final class StoryWorkflow {
     func startRecording() async {
         guard captureState != .recording, captureState != .requestingPermission, !hasPendingRecording else { return }
         errorMessage = nil; permissionDenied = false
-        audio.stopPlayback(); isPlaying = false
+        stopPlayback(); selectedDemoStory = nil; demoPlaybackError = nil
         captureState = .requestingPermission
         guard await audio.requestPermission() else {
             permissionDenied = true
@@ -175,6 +181,7 @@ final class StoryWorkflow {
     func prepareNewRecording() {
         guard !hasPendingRecording else { return }
         stopPlayback()
+        selectedDemoStory = nil; demoPlaybackError = nil
         currentStory = nil; title = "My new story"; errorMessage = nil; permissionDenied = false
         captureState = .idle
     }
@@ -305,6 +312,7 @@ final class StoryWorkflow {
     }
 
     func openStory(id: UUID) {
+        selectedDemoStory = nil; demoPlaybackError = nil
         audio.stopPlayback(); isPlaying = false
         currentStory = stories.first { $0.id == id }
         title = currentStory?.title ?? "My new story"
@@ -325,7 +333,32 @@ final class StoryWorkflow {
         }
     }
 
+    func openDemoStory(id: String) {
+        guard captureState != .recording, captureState != .paused, captureState != .requestingPermission else { return }
+        stopPlayback()
+        selectedDemoStory = demoStories.first { $0.id == id }
+        demoPlaybackError = nil
+    }
+
+    func playDemo(fromStart: Bool = false) {
+        guard let story = selectedDemoStory,
+              captureState != .recording, captureState != .paused, captureState != .requestingPermission else { return }
+        guard let url = demoLibrary.audioURLs[story.id], FileManager.default.fileExists(atPath: url.path) else {
+            stopPlayback()
+            demoPlaybackError = "This demo recording is missing from the app. Choose another story or check for an app update. Your private recordings are unchanged."
+            return
+        }
+        do {
+            try audio.play(url: url, fromStart: fromStart)
+            isPlaying = audio.isPlaying; demoPlaybackError = nil
+        } catch {
+            stopPlayback()
+            demoPlaybackError = "This demo recording could not play. Try Play again or choose another story. \(error.localizedDescription)"
+        }
+    }
+
     func play(fromStart: Bool = false) {
+        if selectedDemoStory != nil { stopPlayback(); selectedDemoStory = nil; demoPlaybackError = nil }
         guard let url = currentAudioURL else { return }
         do { try audio.play(url: url, fromStart: fromStart); isPlaying = audio.isPlaying; errorMessage = nil }
         catch { errorMessage = "This recording could not play. \(error.localizedDescription)"; isPlaying = false }

@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-private enum StoryPalette {
+enum StoryPalette {
     static let forest = Color(red: 24/255, green: 62/255, blue: 52/255)
     static let ivory = Color(red: 248/255, green: 244/255, blue: 234/255)
     static let terracotta = Color(red: 196/255, green: 122/255, blue: 86/255)
@@ -76,11 +76,7 @@ struct ContentView: View {
                     .interactiveDismissDisabled()
             }
             .sheet(isPresented: $showingExplore) {
-                NavigationStack {
-                    ContentUnavailableView("A collection to come", systemImage: "books.vertical", description: Text("There are no community demo stories on this device yet. Your recordings remain private."))
-                        .navigationTitle("Explore Stories")
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingExplore = false } } }
-                }.tint(StoryPalette.forest)
+                ExploreStories(workflow: workflow)
             }
         }.tint(StoryPalette.forest)
     }
@@ -277,7 +273,7 @@ private struct StoryPrimaryButton: ButtonStyle {
     }
 }
 
-private func timeLabel(_ seconds: TimeInterval) -> String {
+func timeLabel(_ seconds: TimeInterval) -> String {
     let value = max(0, Int(seconds.isFinite ? seconds : 0))
     return String(format: "%d:%02d", value / 60, value % 60)
 }
