@@ -1,6 +1,6 @@
 # 09: Verify the complete local MVP on simulator and iPhone
 
-Status: needs-info
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -16,14 +16,17 @@ Parent specification: [Approved Story Within specification](../spec.md) (approve
 
 The local parent/listener journey is demonstrated and its functional, build, privacy, recovery and actual-audio results are recorded. Full accessibility verification is deferred by explicit user direction on 2026-11-12 and does not block the current functional MVP.
 
-## Acceptance criteria
+## Current demo acceptance criteria
 
-- [ ] Complete both start approaches → contextual demo coach → real narration → pause/hint/resume → review/manual text → private save/relaunch → community preview/withdrawal, plus bundled listening, without crashing.
-- [ ] Relevant native workflow tests and a small UI smoke journey pass. Run Debug simulator and Release iOS compilation checks; record simulator/OS/device versions and signing or oldest-OS gaps accurately.
-- [ ] On a physical iPhone, hear narration before and after a pause, verify elapsed duration, replay after relaunch, and check permission denial, background/interruption recovery, and a failed/retried save.
-- Deferred by the user for the current MVP (2026-11-12; not a passing result): full accessibility-size Dynamic Type, VoiceOver, focus/state announcements, contrast/targets and Reduce Motion verification. Retain existing support. Predictable functional navigation and no autoplay remain required.
-- [ ] Test offline operation, empty/missing assets, cancel/retry, private-story exclusion, draft/replacement preservation, and owned-content deletion.
-- [ ] Record the walkthrough steps, real/demo capability inventory, permission evidence for demo content, observed results, and any remaining limitations. Do not claim local-MVP readiness with unmet essential acceptance criteria.
+These replace the broader release checklist for the user's explicitly narrowed iOS27/iPhone15Pro demo scope (2026-11-12).
+
+- [x] Current iOS27 native Debug simulator, Release iOS and signed iPhone builds pass; install on the existing iPhone15Pro without resetting its data.
+- [x] Actual on-device English coaching and real record → save → replay work on the phone. Recording remains the parent's original voice.
+- [x] Retain prior user-confirmed pause/hints, save/reopen, existing-story preservation, replacement cancellation, background/interruption recovery, demo listening and local-preview/cancel/reopen/withdrawal results.
+- [x] Record relevant deterministic workflow and rendered preview checks. Current coaching source passes 76 deterministic iOS27 tests; disclose the simulator asset-loading failure separately from phone success.
+- [x] Record the real/demo boundary and user-directed deferrals without claiming unperformed checks passed.
+
+Deferred from the original gate by the user's demo-only direction: older-device/iOS17 compatibility, full accessibility checks, additional physical failure injection and exhaustive release/language-quality scenarios. Controlled workflow error tests do not become physical-phone failure tests. Later transcription/translation features remain outside this demo slice.
 
 ## Demonstration
 
@@ -54,3 +57,8 @@ This is an integration/acceptance gate, not a delayed accessibility or testing i
 
 
 - 2026-11-12: Demo scope narrowed by the user to iOS 27 on the current iPhone 15 Pro: real on-device English coaching, record/pause/save/reopen/replay. Older-OS compatibility, accessibility and broader nonessential release checklists are deferred. Keep known functional evidence and limitations explicit; actual native generation on the demo phone remains pending. Do not request additional broad manual checklists for this demo.
+
+
+## Answer
+
+The focused iOS27/iPhone15Pro MVP demo is verified. After installation of source `3ff3d8d` (merge `53e59d9`), the user confirmed “Actual on-device coach responds; recording/save/replay work.” Earlier recording/privacy/recovery results remain recorded. This resolves the amended demo gate; it does not claim all original release/accessibility/language scenarios were performed. See [walkthrough](../evidence/ticket-09-walkthrough.md) and [Apple coaching evidence](../evidence/apple-coach.md).

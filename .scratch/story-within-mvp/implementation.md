@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed local tickets: 01, 02, 03, 04, 05, 06, 07, 08.
-Current verification gate: 09 (remaining functional verification only); accessibility checks explicitly deferred by the user for this MVP. Ticket 10 is now claimed for user-approved Apple on-device English coaching.
-Ticket 08 is resolved after rendered UI regression and user-confirmed first-open/cancel/reopen/withdrawal verification. Ticket 09 remains incomplete.
+Completed local demo tickets: 01, 02, 03, 04, 05, 06, 07, 08, 09, 10.
+Current demo status: verified on iOS27/iPhone15Pro. No implementation ticket is claimed; language-service tickets11–14 are outside the immediate demo scope.
+Tickets09/10 are resolved under the user-amended demo scope; actual native coaching and record/save/replay passed on the current phone. Broader checks are deferred.
 
 ## Baseline
 
@@ -162,3 +162,10 @@ The user confirmed “Passed; microphone stays stopped and draft plays,” follo
 ## iPhone demo priority
 
 2026-11-12: User requested iOS27-only on the existing iPhone15Pro and skipping work unnecessary for the MVP demo. Specv0.4 and tickets09/10 record the narrowed scope. The implementer is raising the deployment target in its isolated project, finishing the small bypass/input-preservation fix, and preparing current-OS builds. Historical iOS17 passes remain evidence only; simulator native generation failed to load assets and is not treated as a model pass. The immediate acceptance target is genuine coaching plus the existing working record/save/replay path on the phone. No cloud or credential setup is needed for the selected slice.
+
+
+## iPhone demo verified
+
+Source `3ff3d8d`/candidate `6581746` merged via `53e59d9`. Both review axes have no remaining concrete blockers after cue wait/busy-state and pending-thought repairs. Current 76 deterministic iOS27 tests, Debug simulator, Release iOS, integration Debug and signed device builds passed. User confirmed actual on-device Apple coaching and record/save/replay on iPhone15Pro after the in-place update. Tickets09/10 are resolved for this narrowed demo; the future language backlog is not reported complete. No cloud/API credential setup is needed.
+
+Original project formatting is retained except four authorized 27.0 target substitutions. It remains unstaged, SHA256 `aa0ea85da9b1808bfb4f776afe508943488f709f4329558cf8aa09d9de671219`, with parsed semantics equal to committed candidate. Backup/stash preserved during validation. See evidence/apple-coach.md and evidence/apple-coach-review.md for results and limits.

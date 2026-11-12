@@ -1,6 +1,6 @@
 # Local MVP verification walkthrough
 
-Status: functional verification in progress. The user deferred accessibility checks on 2026-11-12; they are not a current MVP blocker or a reported pass. Earlier pending-check entries below are historical. This is not a declaration that every functional device check passed.
+Status: focused iOS27/iPhone15Pro demo verified. The user deferred accessibility checks on 2026-11-12; they are not a current MVP blocker or a reported pass. Earlier pending-check entries below are historical. This is not a declaration that every functional device check passed.
 
 Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. Fresh final build/test results were subsequently obtained as recorded below; the pre-fix signed build was not installed.
 
@@ -63,3 +63,8 @@ User confirmed: “Passed; microphone stays stopped and draft plays.” This com
 ## Current priority amendment
 
 The user explicitly requested skipping accessibility checks for now and focusing on functionality. The pending maximum-text-size question is withdrawn. Do not request further VoiceOver, Dynamic Type, Reduce Motion or focus/target/contrast walkthroughs for this MVP unless the user reopens that work. Keep existing accessibility support. Functional acceptance, privacy, real audio and truthful error recovery remain required; no unperformed physical test is relabeled as passed.
+
+
+## Focused demo completed
+
+After the user's iOS27/iPhone15Pro-only direction, source `3ff3d8d` was signed and installed in place. User confirmed “Actual on-device coach responds; recording/save/replay work.” Together with prior core recording/recovery/privacy/listening checks, 76 current deterministic tests and green builds, the amended demo gate is resolved. Full accessibility, older-device, exhaustive physical-negative and language-quality checks remain deferred, not passed. Coaching is actual on-device English generation when available, with explicitly labeled deterministic demo prompts otherwise. No Supabase/OpenAI setup is required.

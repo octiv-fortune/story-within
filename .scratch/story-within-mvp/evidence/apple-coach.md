@@ -1,6 +1,6 @@
 # Apple on-device English coach: implementation evidence
 
-Date: 2026-11-12. Ticket: [10](../issues/10-live-storytelling-coach.md). Current iOS 27 app/test/project source: `3ff3d8dde9f20899b4b250e671d547455773b17e` on `codex/story-within-apple-coach`, with the current demo-scope metadata from integration `0412130` merged as `7130338`. Ticket remains **claimed**: actual supported-phone generation/authorship verification is outstanding.
+Date: 2026-11-12. Ticket: [10](../issues/10-live-storytelling-coach.md). Current iOS 27 app/test/project source: `3ff3d8dde9f20899b4b250e671d547455773b17e` on `codex/story-within-apple-coach`, with the current demo-scope metadata from integration `0412130` merged as `7130338`. Ticket is **resolved for the narrowed iPhone demo** after the user-confirmed native coaching and record/save/replay result below; broad model-quality validation is not claimed.
 
 ## Current demo scope
 
@@ -73,3 +73,12 @@ Apple documentation retrieved 2026-11-12:
 - Installed Xcode 27.1 SDK interface: `/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/FoundationModels.framework/Modules/FoundationModels.swiftmodule/arm64e-apple-ios.swiftinterface`. Confirmed iOS 26 availability, guided generation, iOS 26.4 token-count APIs, and iOS 26/27 error types used by the adapter.
 
 The current isolated project file differs from `8c2aed2` only in four `IPHONEOS_DEPLOYMENT_TARGET` values (17.0→27.0), as explicitly requested by the user. Its SHA-256 is `5cabc5c4bb090b06f6b6d54b459bc4f77784582febe0d834c418696d925ec906`. The integration working copy's existing uncommitted project-format delta remained read-only during implementation and last checked as `1b66df8e503b6b2c326fc54b4de4f03f5b0415016165f3b69438ea9cd32079b3`; the root/merger owns preserving its formatting while applying the approved target change.
+
+
+## Integration and actual iPhone result
+
+No-ff merge `53e59d980ce8b03002636e9cda773d7b2f1d131c` integrated candidate `6581746`, with app/tests identical to source `3ff3d8d`. Integration Debug simulator build passed (`/private/tmp/story-within-apple-integration/debug-simulator-build.log`). Signed Debug iOS build passed (`/private/tmp/story-within-apple-device-build.log`), and devicectl confirmed an in-place install on the existing iPhone15Pro. No store reset, model setting change, cloud account or API credential was used.
+
+User confirmed: “Actual on-device coach responds; recording/save/replay work.” This establishes basic actual English generation and the core recording demo on the physical phone. It supersedes phone-pending results only; the simulator asset error and unavailable Mac result remain historical observations. No broad adversarial/cultural/language-quality validation is claimed.
+
+Project preservation: original formatting/comments/order were restored exactly except four user-authorized deployment 17.0→27.0 substitutions. Restored SHA256 `aa0ea85da9b1808bfb4f776afe508943488f709f4329558cf8aa09d9de671219`; parsed semantics equal the committed candidate. The formatting delta remains unstaged. Backup/stash retained during validation.

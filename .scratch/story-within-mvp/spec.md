@@ -1,10 +1,11 @@
 # Story Within: MVP implementation specification
 
-Status: ready-for-agent
+Status: needs-info
 Approval: Specification and ticket breakdown approved by the user on 2026-11-12.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published with 14 native sub-issues and their approved blocking relationships.
 GitHub issue: https://github.com/octiv-fortune/story-within/issues/1
+Current deliverable: iOS27/iPhone15Pro demo verified; later language-service backlog deferred.
 Version: 0.4
 Date: 2026-11-12 (Africa/Johannesburg)
 Source: [MVP implementation brief](../../docs/agents/product-brief.md) and the user's workflow and constraints.
@@ -294,3 +295,6 @@ The `ready-for-agent` triage label follows to-spec's convention. Specification a
 
 
 - 2026-11-12: User narrowed the demo target to iOS 27 on the existing iPhone 15 Pro and requested skipping work not necessary for that demo. Older-device compatibility, accessibility checks, and broader release-validation work are deferred. The simulator asset-loading failure is not evidence that iOS 17 caused the AI issue; genuine generation must be observed on the actual demo phone. Later language-service scope is outside this immediate demo slice.
+
+
+- 2026-11-12: The user confirmed “Actual on-device coach responds; recording/save/replay work” on the installed iPhone15Pro build. The narrowed demo is verified and tickets09/10 are resolved. The parent specification remains open for the deferred language-service backlog; it is not marked wholly complete.

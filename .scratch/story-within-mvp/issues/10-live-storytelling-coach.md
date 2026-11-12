@@ -1,6 +1,6 @@
 # 10: Coach a parent's story with Apple on-device intelligence
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,14 +18,14 @@ Generate real short English coaching and prepared text cues with Apple Foundatio
 
 ## Acceptance criteria
 
-- [ ] On an eligible device with a ready model, the coach uses real on-device generation with a clear Apple Intelligence/on-device mode label. Check runtime and supported language before requests; do not promise capability from device identity alone.
-- [ ] Unavailable device/model state uses clearly labeled deterministic demo coaching, explains the limitation where useful, and never blocks recording or saving. No cloud account, API credentials, backend or third-party iOS dependency is introduced.
-- [ ] Responses contain short guidance and at most one primary question, honor the parent's choices and skips, avoid whole-story writing and unsupported diagnostic/cultural claims, and preserve Start Recording at any point.
-- [ ] Prepare bounded contextual text cues before capture. Never request analysis of live narration, send audio to the model, autoplay a hint or automatically resume recording. Bound prompts to the model context window without mutating the parent's full session text.
-- [ ] Real-model errors, unavailability changes, unsupported language, invalid/oversized output and cancellation keep parent input and offer retry/continue. A failed real response is not replaced with demo guidance while presented as actual AI. Generic cue fallback remains explicitly labeled.
-- [ ] Correct all demo-specific labels/actions in the real-provider journey. Keep preferences/conversation session-only and absent from discovery metadata.
-- [ ] At the agreed application-workflow/service seam, deterministic tests cover provider selection, valid responses/cues, failure/cancellation/stale results and recording continuity. Actual supported-device model scenarios establish genuine generation and parent-authorship behavior; doubles alone do not.
-- [ ] Debug simulator and Release iOS builds and the relevant deterministic workflow tests remain green on iOS 27. No further iOS 17 compatibility work is required. Real native-generation checks remain separate from deterministic doubles and must be verified on the iPhone 15 Pro. Preserve existing stories/audio when updating the iPhone.
+- [x] On an eligible device with a ready model, the coach uses real on-device generation with a clear Apple Intelligence/on-device mode label. Check runtime and supported language before requests; do not promise capability from device identity alone.
+- [x] Unavailable device/model state uses clearly labeled deterministic demo coaching, explains the limitation where useful, and never blocks recording or saving. No cloud account, API credentials, backend or third-party iOS dependency is introduced.
+- [x] Responses contain short guidance and at most one primary question, honor the parent's choices and skips, avoid whole-story writing and unsupported diagnostic/cultural claims, and preserve Start Recording at any point.
+- [x] Prepare bounded contextual text cues before capture. Never request analysis of live narration, send audio to the model, autoplay a hint or automatically resume recording. Bound prompts to the model context window without mutating the parent's full session text.
+- [x] Real-model errors, unavailability changes, unsupported language, invalid/oversized output and cancellation keep parent input and offer retry/continue. A failed real response is not replaced with demo guidance while presented as actual AI. Generic cue fallback remains explicitly labeled.
+- [x] Correct all demo-specific labels/actions in the real-provider journey. Keep preferences/conversation session-only and absent from discovery metadata.
+- [x] At the agreed application-workflow/service seam, deterministic tests cover provider selection, valid responses/cues, failure/cancellation/stale results and recording continuity. Actual supported-device model scenarios establish genuine generation and parent-authorship behavior; doubles alone do not.
+- [x] Debug simulator and Release iOS builds and the relevant deterministic workflow tests remain green on iOS 27. No further iOS 17 compatibility work is required. Real native-generation checks remain separate from deterministic doubles and must be verified on the iPhone 15 Pro. Preserve existing stories/audio when updating the iPhone.
 
 ## Demonstration
 
@@ -58,3 +58,8 @@ Technical blocker is the existing coach workflow, not transcription or community
 
 
 - 2026-11-12: User explicitly narrowed the demo to iOS 27 on the existing iPhone 15 Pro. Stop older-device testing and unnecessary validation work. Prior iOS17 compatibility criteria are superseded for this demo. Source review found cue-wait/busy-state issues (fixed in progress) and a newly typed thought omitted by bypass (demo-critical preservation fix pending). Simulator native generation attempted but failed to load assets; no real-model result is claimed. Prioritize final signed install and actual phone coaching/record/save/replay.
+
+
+## Demo acceptance and answer
+
+Resolved for the user-approved iOS27/iPhone15Pro demo. Source `3ff3d8d`, candidate `6581746`, integrated via `53e59d9`. All 76 deterministic iOS27 checks, Debug simulator, Release iOS and signed Debug iPhone builds passed. The iPhone was updated in place; user confirmed “Actual on-device coach responds; recording/save/replay work.” This establishes basic English generation and the core recording demo on the real phone. The failed simulator asset-loading attempt remains recorded; broader semantic/adversarial and language-quality validation was not performed and is outside the narrowed demo scope. No backend/accounts/API keys were needed. See [evidence](../evidence/apple-coach.md) and [source review](../evidence/apple-coach-review.md).
