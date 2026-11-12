@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-private enum StoryPalette {
+enum StoryPalette {
     static let forest = Color(red: 24/255, green: 62/255, blue: 52/255)
     static let ivory = Color(red: 248/255, green: 244/255, blue: 234/255)
     static let terracotta = Color(red: 196/255, green: 122/255, blue: 86/255)
@@ -10,6 +10,7 @@ private enum StoryPalette {
 
 struct ContentView: View {
     @Bindable var workflow: StoryWorkflow
+    @State private var showingCreation = false
     @State private var showingStudio = false
     @State private var showingExplore = false
     @State private var showingLibrary = false
@@ -28,7 +29,7 @@ struct ContentView: View {
                             .font(.body)
                     }
                     VStack(spacing: 12) {
-                        Button { workflow.prepareNewRecording(); showingStudio = true } label: {
+                        Button { workflow.coaching.reset(); showingCreation = true } label: {
                             Label("Create a Story", systemImage: "mic.fill").frame(maxWidth: .infinity, minHeight: 36)
                         }.buttonStyle(StoryPrimaryButton())
                         Button { showingExplore = true } label: {
@@ -76,6 +77,10 @@ struct ContentView: View {
             .background(StoryPalette.ivory)
             .foregroundStyle(StoryPalette.ink)
             .navigationTitle("Story Within")
+            .sheet(isPresented: $showingCreation, onDismiss: { workflow.coaching.reset() }) {
+                StoryCreationView(workflow: workflow)
+                    .interactiveDismissDisabled()
+            }
             .sheet(isPresented: $showingStudio) {
                 RecordingStudio(workflow: workflow)
                     .interactiveDismissDisabled()
@@ -150,7 +155,7 @@ private struct PersonalStoryLibrary: View {
     }
 }
 
-private struct RecordingStudio: View {
+struct RecordingStudio: View {
     @Bindable var workflow: StoryWorkflow
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -258,6 +263,17 @@ private struct RecordingStudio: View {
                  : workflow.captureState == .recording
                  ? "Your microphone is capturing your voice. You can pause for a break or stop to listen."
                  : "Your microphone captures your voice. Your audio stays on this device. Tap Record to choose microphone access.")
+            if workflow.captureState == .idle, !workflow.coaching.preparedCues.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(workflow.coaching.cueLabel).font(.headline)
+                    if let context = workflow.coaching.context { Text("Starting point: \(context.initialText)") }
+                    Text(workflow.coaching.usingGenericCues
+                         ? "Simple starting cues are ready. Recording is available."
+                         : "Your starting point and optional text cues are ready for this session.")
+                        .font(.subheadline)
+                }.padding(18).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 18))
+            }
             VStack(spacing: 20) {
                 Image(systemName: workflow.captureState == .paused ? "pause.circle" : workflow.captureState == .recording ? "mic.fill" : "mic")
                     .font(.system(size: 56)).foregroundStyle(StoryPalette.forest).accessibilityHidden(true)
@@ -372,7 +388,7 @@ private struct RecordingStudio: View {
     }
 }
 
-private struct StoryPrimaryButton: ButtonStyle {
+struct StoryPrimaryButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.headline).padding(12)
             .foregroundStyle(.white)

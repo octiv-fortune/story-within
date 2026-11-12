@@ -28,7 +28,7 @@ private struct AppRoot: View {
     private func openStories() {
         do {
             let base = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            let workflow = try StoryWorkflow(storageURL: base.appendingPathComponent("StoryWithin", isDirectory: true), audio: audio)
+            let workflow = try StoryWorkflow(storageURL: base.appendingPathComponent("StoryWithin", isDirectory: true), audio: audio, coach: DemoStoryCoachService())
             audio.onInterruption = { [weak workflow] in workflow?.handleInterruption() }
             self.workflow = workflow; startupError = nil
         } catch { startupError = error.localizedDescription }
