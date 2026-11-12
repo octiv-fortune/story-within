@@ -51,3 +51,6 @@ This is an integration/acceptance gate, not a delayed accessibility or testing i
 
 
 - 2026-11-12: User explicitly deferred accessibility checks to prioritize MVP functionality. The outstanding large-text prompt is withdrawn; no accessibility result is claimed. This gate now tracks remaining functional verification only. Existing 64 workflow tests, rendered preview UI regression, builds and user-confirmed actual-audio/preview/interruption results remain valid; physical permission-denial and failed-save behavior have not been independently observed on the phone and are not silently marked passed.
+
+
+- 2026-11-12: Demo scope narrowed by the user to iOS 27 on the current iPhone 15 Pro: real on-device English coaching, record/pause/save/reopen/replay. Older-OS compatibility, accessibility and broader nonessential release checklists are deferred. Keep known functional evidence and limitations explicit; actual native generation on the demo phone remains pending. Do not request additional broad manual checklists for this demo.

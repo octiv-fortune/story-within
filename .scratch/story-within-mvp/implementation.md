@@ -157,3 +157,8 @@ The user confirmed “Passed; microphone stays stopped and draft plays,” follo
 ## Apple on-device coaching decision
 
 2026-11-12: After reviewing Apple's current Foundation Models documentation and device/language limits, the user selected on-device English coaching first, with demo mode on unsupported devices. Spec v0.3 and ticket 10 reflect this explicit provider/scope amendment. The unchanged native project passed a fresh Debug simulator build before feature changes (/private/tmp/story-within-coach-baseline.log). Root project formatting SHA remains unchanged. Supabase/OpenAI setup is parked for this slice; later transcription/translation scope and language-review prerequisites remain visible. The optional fm CLI availability probe could not run because its separate machine-wide CLI legal notice has not been accepted; no privileged acceptance was attempted, and the implementation will use the app framework.
+
+
+## iPhone demo priority
+
+2026-11-12: User requested iOS27-only on the existing iPhone15Pro and skipping work unnecessary for the MVP demo. Specv0.4 and tickets09/10 record the narrowed scope. The implementer is raising the deployment target in its isolated project, finishing the small bypass/input-preservation fix, and preparing current-OS builds. Historical iOS17 passes remain evidence only; simulator native generation failed to load assets and is not treated as a model pass. The immediate acceptance target is genuine coaching plus the existing working record/save/replay path on the phone. No cloud or credential setup is needed for the selected slice.
