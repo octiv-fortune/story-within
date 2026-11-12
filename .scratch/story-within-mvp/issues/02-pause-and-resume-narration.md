@@ -1,6 +1,6 @@
 # 02: Pause and resume one continuous narration
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,11 +18,11 @@ A parent can take a break and resume the same real recording, then hear narratio
 
 ## Acceptance criteria
 
-- [ ] Record, Pause, Resume, and Stop controls and accessible state announcements reflect actual capture state rather than a UI-only timer.
-- [ ] Pausing excludes the break from recorded duration; resuming appends to the same narration without dropping the earlier segment or creating a second visible story.
-- [ ] Stopping while recording or paused finalizes a valid playable asset; repeated or rapid actions cannot start competing recorders.
-- [ ] Saving/relaunching preserves both spoken segments, and cancellation/errors retain recoverable audio.
-- [ ] Workflow checks exercise allowed transitions and duration semantics; a physical iPhone recording with distinguishable speech before/after the pause confirms real continuity.
+- [x] Record, Pause, Resume, and Stop controls and accessible state announcements reflect actual capture state rather than a UI-only timer.
+- [x] Pausing excludes the break from recorded duration; resuming appends to the same narration without dropping the earlier segment or creating a second visible story.
+- [x] Stopping while recording or paused finalizes a valid playable asset; repeated or rapid actions cannot start competing recorders.
+- [x] Saving/relaunching preserves both spoken segments, and cancellation/errors retain recoverable audio.
+- [x] Workflow checks exercise allowed transitions and duration semantics; a physical iPhone recording with distinguishable speech before/after the pause confirms real continuity.
 
 ## Demonstration
 
@@ -52,3 +52,9 @@ Prepared hints are deliberately added by ticket 04; this slice establishes the f
 - 2026-11-12: Candidate verification passed all 17 native workflow tests on iOS 17.5, including the 12 existing regressions, plus Debug simulator and Release iOS builds. The merged integration passed one generic Debug iOS Simulator build with code signing disabled: `/private/tmp/story-within-integration-ticket02.log`; outputs: `/private/tmp/story-within-integration-ticket02`. No source delta required a duplicate full-suite run. Tests use deterministic audio/clock results and real temporary storage; they do not establish microphone continuity.
 
 - 2026-11-12: Status remains **claimed**, and acceptance completion is pending physical iPhone verification: distinguishable speech before and after a several-second pause, one playable narration with the break excluded from duration, then save/relaunch/replay. Full VoiceOver/Dynamic Type walkthrough also remains unverified. The coordinating agent owns installation and the user check; no phone interaction or GitHub update was performed during this merge.
+
+- 2026-11-12: User confirmed recording works perfectly; reported only playback label contrast. Explicit foreground/tint correction1009f9f integrated0d556cb, signed build passed and updated phone. User then confirmed buttons readable and both demo recordings audible. Pause/recording acceptance is resolved; full VoiceOver walkthrough remains unverified.
+
+## Answer
+
+Resolved on codex/story-within-mvp after native automated checks and the user-observed physical verification above. See evidence/ticket-02.md and implementation.md.

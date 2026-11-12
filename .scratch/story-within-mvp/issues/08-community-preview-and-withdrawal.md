@@ -1,6 +1,6 @@
 # 08: Choose and withdraw an explicitly local community preview
 
-Status: ready-for-agent
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -45,3 +45,5 @@ No remote upload, account, public URL, or cross-device sharing is implied. The p
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/9; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+- 2026-11-12: Prerequisites resolved, including user-confirmed physical recording/demo playback and readable controls. Claimed next local-MVP slice in isolated worktree.

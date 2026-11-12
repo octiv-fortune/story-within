@@ -62,3 +62,9 @@ Ticket 07 remains **claimed** pending human full-recording listening and device 
 - 07: Demo discovery/playback and the shared playback contrast correction are integrated and claimed. Human full-recording listening and rendered device playback/credits verification remain pending; audible acceptance is not inferred from code/tests.
 
 No GitHub issue was closed or changed as part of this local merge/tracker step. The coordinating agent owns publication and frontier scheduling.
+
+## Physical feedback and next frontier
+
+2026-11-12: User clarified that recording works perfectly; the only reported problem was illegible Play labels. Shared personal/demo playback foreground and tint were corrected in1009f9f/0d556cb, with signed Debug build and updated iPhone. User confirmed: "Buttons readable; both demos play." Tickets02 and07 are now resolved. Whole-story cultural/language review and full VoiceOver walkthrough remain unclaimed.
+
+Current claimed frontier:04 prepared paused hints;05 interruptions/replacement protection;08 explicit on-device community preview/withdrawal. Tickets01,02,03,06,07 resolved. M2 proxy/qualified language reviewers remain unavailable. Known project.pbxproj working delta is Xcode formatting/comments/order only, semantically identical and preserved uncommitted.

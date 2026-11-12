@@ -1,6 +1,6 @@
 # 04: Request prepared inspiration without interrupting narration
 
-Status: ready-for-agent
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -44,3 +44,5 @@ Use native Swift/SwiftUI and Apple frameworks only. Keep recording/playback real
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/5; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+- 2026-11-12: Prerequisites resolved, including user-confirmed physical recording/demo playback and readable controls. Claimed next local-MVP slice in isolated worktree.

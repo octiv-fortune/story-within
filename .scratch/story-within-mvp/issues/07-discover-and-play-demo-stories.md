@@ -1,6 +1,6 @@
 # 07: Discover and listen to original demo stories
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,12 +18,12 @@ A family can open Explore, choose a permission-cleared story, inspect attributio
 
 ## Acceptance criteria
 
-- [ ] Bundle a small collection of at least two original or permission-cleared stories with actual human recordings and recorded content permissions/attribution; silence or generated placeholder audio does not satisfy this ticket.
-- [ ] Discovery cards and story detail expose title, creator, source language, and theme, plus any text/translation actually supplied with accurate provenance.
-- [ ] All bundled entries are identified as demo content; seed identities remain stable and relaunching never duplicates the collection.
-- [ ] Play, pause, replay, duration, and switching between stories work offline. Only one story plays at a time; entering capture stops playback; nothing autoplays.
-- [ ] Empty, missing-asset, and playback-error states are actionable and do not corrupt personal stories.
-- [ ] Workflow checks verify seed idempotence and discovery/player selection; manual listening confirms that every bundled recording is audible and permission-cleared.
+- [x] Bundle a small collection of at least two original or permission-cleared stories with actual human recordings and recorded content permissions/attribution; silence or generated placeholder audio does not satisfy this ticket.
+- [x] Discovery cards and story detail expose title, creator, source language, and theme, plus any text/translation actually supplied with accurate provenance.
+- [x] All bundled entries are identified as demo content; seed identities remain stable and relaunching never duplicates the collection.
+- [x] Play, pause, replay, duration, and switching between stories work offline. Only one story plays at a time; entering capture stops playback; nothing autoplays.
+- [x] Empty, missing-asset, and playback-error states are actionable and do not corrupt personal stories.
+- [x] Workflow checks verify seed idempotence and discovery/player selection; manual listening confirms that every bundled recording is audible and permission-cleared.
 
 ## Demonstration
 
@@ -55,3 +55,9 @@ Depends on 01 for the app navigation and functioning shared playback boundary; d
 - 2026-11-12: Combined verification passed **36 native workflow tests**, including real AVAudioPlayer MP3 play/clock/pause/replay/switch/duration and every accepted recording/library/coaching case: `/private/tmp/story-within-07-coach-combined.log`. The later styling-only correction gives both personal/demo Play/Pause labels explicit white foreground and forest tint, and Replay explicit forest labels; no audio/state/storage behavior changed. Debug and Release builds passed after that correction. One merged integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket07.log`; outputs: `/private/tmp/story-within-integration-ticket07`. Identical candidate source required no duplicate full-suite run.
 
 - 2026-11-12: Status remains **claimed** pending human full-recording listening and device playback/credits verification. The user clarified recording works perfectly and reported only illegible Play colors; the corrected personal/demo controls still require rendered device recheck. Ticket 02 remains claimed until that follow-up. Physical/visual/VoiceOver/large-Dynamic-Type checks are not inferred from compilation or automated playback. The coordinating agent owns the corrected phone installation and user check; no phone or GitHub action occurred during this merge.
+
+- 2026-11-12: Root verified original publisher CC BY3.0 permissions and unchanged asset hashes; full Apple PCM decode passed, actual AVAudioPlayer behavior tests passed in app on iOS17.5, combined36workflow tests/Debug/Release green. User confirmed both demo recordings audibly play with readable controls on physical iPhone. Whole-story cultural/linguistic verification and full VoiceOver walkthrough are not claimed.
+
+## Answer
+
+Resolved on codex/story-within-mvp after native automated checks and the user-observed physical verification above. See evidence/ticket-07.md and implementation.md.
