@@ -21,7 +21,7 @@ The user previously approved application workflow behavior with deterministic au
 
 ## Verification record
 
-Native workflow and compilation checks passed below. Physical narration and accessibility-device observations remain pending; the ticket stays claimed.
+Native workflow and compilation checks passed below. The user also confirmed audible recording/playback and edited-title/audio persistence after close/reopen on a physical iPhone. Full VoiceOver journey verification remains unverified; ticket status is left for the coordinating review/merge workflow.
 
 ## Implementation
 
@@ -49,6 +49,12 @@ Native workflow and compilation checks passed below. Physical narration and acce
 - `/private/tmp/story-within-ticket01-final-ios-release.log`: **BUILD SUCCEEDED**, final Release generic iOS app, unsigned compilation. Both final app builds include the native adapter's safe decoded-duration check after interruption. The only warning is the initialized project's nonblocking missing AppIntents metadata extraction.
 - `git diff --check` passed. No third-party packages, AI service, desktop/visionOS target, or later-ticket feature was introduced.
 
+## User-observed physical and accessibility evidence
+
+On 2026-11-12, the user confirmed on the installed signed Debug app on a physical **iPhone 15 Pro, iOS 27.0.1** that original recorded audio was audible and that the edited title and recording survived closing/reopening the app and replaying from Home. This is a user-observed device result, not an assertion inferred from audio doubles or remote launch automation. The installed app preceded the final failure-recovery safety changes; those changes have the final compilation/workflow results above.
+
+The coordinating agent additionally inspected `/private/tmp/story-within-ticket01-home-accessibility.png` on the current iOS 27 simulator at accessibility text size: heading/body wrapped. It restored the original large text setting. This is Home layout evidence, not a claim that the complete VoiceOver or scroll/action journey passed.
+
 ## Remaining acceptance checks
 
-Physical microphone capture, audible original playback, save/relaunch/replay, actual permission-denial recovery, and accessibility-device checks require human observations. The installed phone app has not yet been reported as completing these steps. Do not mark this ticket resolved or audio-device ready based on deterministic test results. iOS 17.5 is the oldest available installed iOS 17 runtime; exact iOS 17.0 runtime execution has not been verified. VoiceOver and large Dynamic Type journey verification remain pending unless the coordinating agent records further results.
+Exact iOS 17.0 runtime execution has not been verified; iOS 17.5 was the oldest available installed iOS 17 runtime used. Actual microphone denial recovery is covered deterministically at the workflow boundary, with manual system Settings verification still unrecorded. Full VoiceOver and large Dynamic Type recording/review journey verification remain unrecorded. The coordinating agent owns review, integration, issue synchronization, and completion status; this implementation does not close GitHub issues.
