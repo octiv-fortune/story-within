@@ -1,6 +1,6 @@
 # 02: Pause and resume one continuous narration
 
-Status: ready-for-agent
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -44,3 +44,5 @@ Prepared hints are deliberately added by ticket 04; this slice establishes the f
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/3; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+- 2026-11-12: Ticket 01 resolved after reviewed integration, 12 native workflow passes, green Debug/Release builds, and user-confirmed physical narration/save/reopen. This ticket is now claimed in an isolated worktree.
