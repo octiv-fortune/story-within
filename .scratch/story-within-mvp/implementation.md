@@ -2,8 +2,8 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed local tickets: 01, 02, 03, 04, 06, 07, 08.
-Current claimed ticket: 05 interruptions/replacement protection (remaining physical interruption/route and accessibility gates).
+Completed local tickets: 01, 02, 03, 04, 05, 06, 07, 08.
+Current verification gate: 09 (needs-info for remaining physical/accessibility acceptance); no implementation ticket is currently claimed.
 Ticket 08 is resolved after rendered UI regression and user-confirmed first-open/cancel/reopen/withdrawal verification. Ticket 09 remains incomplete.
 
 ## Baseline
@@ -138,3 +138,8 @@ The updated iPhone app was installed in place without a reset. User confirmed �
 
 
 The clean merged preview worktree was removed after verification; its branch, committed rendered regression support and temporary validation artifacts were retained. Final root status is only the original unstaged project.pbxproj formatting delta, with its SHA-256 unchanged at 1b66df8e503b6b2c326fc54b4de4f03f5b0415016165f3b69438ea9cd32079b3.
+
+
+## Interruption acceptance
+
+The user confirmed “Passed; microphone stays stopped and draft plays,” following earlier background/replacement/reopen checks. Ticket 05 is resolved from combined functional workflow/build and physical evidence; the exact interruption trigger was not stated and no call/headset-specific result is inferred. Tickets 01–08 are now resolved locally. Ticket 09 remains open for full accessibility and remaining physical negative/recovery verification; M2 remains externally blocked. No application source changed for this result, so no additional build/test run is needed.

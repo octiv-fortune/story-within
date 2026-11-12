@@ -1,6 +1,6 @@
 # 05: Protect takes during interruptions, navigation, and replacement
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -18,12 +18,12 @@ A parent can recover from an interrupted recording or reconsider a take without 
 
 ## Acceptance criteria
 
-- [ ] Backgrounding, audio-session interruptions, and loss of an active route pause or safely finalize capture and explain the resulting state; the microphone never restarts automatically.
-- [ ] Captured content remains reviewable/recoverable after an interruption, and a parent can explicitly resume when supported or retain the finalized take.
-- [ ] Leaving capture/review with unsaved work offers meaningful keep/discard/cancel choices. Cancelling leaves the current recording/edits intact.
-- [ ] Re-recording requires confirmation. Keep the existing finalized take until a successful replacement is durably retained; a failed or cancelled replacement preserves the original.
-- [ ] Missing/corrupt audio, storage errors, and denied access produce truthful retry/recovery states without false save success.
-- [ ] Workflow checks cover these recoveries; physical iPhone checks cover at least backgrounding, an audio interruption/route change when available, and reopening finalized drafts. Forced-termination recovery of an in-flight take is not promised.
+- [x] Backgrounding, audio-session interruptions, and loss of an active route pause or safely finalize capture and explain the resulting state; the microphone never restarts automatically.
+- [x] Captured content remains reviewable/recoverable after an interruption, and a parent can explicitly resume when supported or retain the finalized take.
+- [x] Leaving capture/review with unsaved work offers meaningful keep/discard/cancel choices. Cancelling leaves the current recording/edits intact.
+- [x] Re-recording requires confirmation. Keep the existing finalized take until a successful replacement is durably retained; a failed or cancelled replacement preserves the original.
+- [x] Missing/corrupt audio, storage errors, and denied access produce truthful retry/recovery states without false save success.
+- [x] Workflow checks cover these recoveries; physical iPhone checks cover at least backgrounding, an audio interruption/route change when available, and reopening finalized drafts. Forced-termination recovery of an in-flight take is not promised.
 
 ## Demonstration
 
@@ -53,3 +53,10 @@ Use native Swift/SwiftUI and Apple frameworks only. Keep recording/playback real
 - 2026-11-12: Reviewed candidate `9113572` integrated as `d5cfdd0`; identical committed tree and merged generic Debug Simulator build passed. See [integration evidence](../evidence/ticket-05.md#coordinator-integration-checkpoint). Status remains claimed pending physical interruption/route-change/replacement and accessibility acceptance; no device or GitHub completion is inferred.
 
 - 2026-11-12: Independent M1 review's stopped-replacement relaunch/retry data-loss finding repaired in isolated branch `codex/story-within-recovery-fix` (`6a73f29`, `f839c99`, merged integration `109bcdc`). Atomic filesystem recovery metadata restores the new take identity/duration without a SwiftData schema change; absent/corrupt/foreign/stale records cannot silently discard audio, and cancellation preserves original-take backups. Eight regression checks added; all 64 combined iOS 17.5 workflow tests plus final Debug Simulator and Release iOS builds passed. See [M1 review fix evidence](../evidence/m1-review-fixes.md). Status remains claimed pending physical interruption/route/replacement and accessibility acceptance; no phone or GitHub completion is inferred.
+
+
+- 2026-11-12: Following earlier user-passed background finalization, existing-story/reopen and replacement-cancellation checks, the user confirmed the real interruption result: “Passed; microphone stays stopped and draft plays.” A one-device Clock alarm procedure was offered because a second phone was unavailable. The reply does not explicitly name the trigger, so do not claim an incoming-call, alarm-specific or headset route-change result. Combined with the native workflow/relaunch/error regressions, functional ticket 05 is resolved. Full VoiceOver/accessibility-size Dynamic Type, permission-denial and remaining physical failure verification remain open under ticket 09.
+
+## Answer
+
+Resolved on codex/story-within-mvp from reviewed recovery source, 64 passing native workflow tests, green Debug/Release/signed device builds, and user-confirmed physical background/replacement/interruption recovery. The captured draft remains playable without automatically restarting the microphone. See [recovery repair evidence](../evidence/m1-review-fixes.md) and [device walkthrough](../evidence/ticket-09-walkthrough.md). This does not establish forced-termination recovery of an in-flight take or complete M1 accessibility acceptance.

@@ -53,3 +53,8 @@ The user replied “Everything looks great” to the combined existing-story, hi
 ## Preview defect resolved on iPhone
 
 Application fix bde75c2 is integrated through f43aa10. The rendered UI regression failed before the fix and passes afterward, including Cancel/reopen; 64 workflow tests and Debug/Release/signed iPhone builds passed. The user then confirmed “Preview opens immediately; cancel/reopen and withdrawal pass.” This supersedes the earlier pending/failing preview result. The earlier existing-story, hint/resume, save/reopen, replacement-cancel and background-finalization checks are also user-passed. Full VoiceOver, accessibility-size Dynamic Type, available call/headset route interruption, permission denial and remaining physical failure checks are still unverified. M1 readiness is not claimed.
+
+
+## Real interruption result
+
+User confirmed: “Passed; microphone stays stopped and draft plays.” This completes the physical interruption-result check alongside earlier background finalization and replacement-cancellation passes. The Clock alarm method was suggested after the user said no second phone was available, but their result does not explicitly identify the trigger; no call-specific, alarm-specific or headset route-change claim is made. Functional ticket 05 is resolved. Full accessibility-size Dynamic Type/VoiceOver/Reduce Motion, microphone-denial and remaining physical failure checks remain open.

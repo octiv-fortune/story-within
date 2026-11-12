@@ -45,3 +45,6 @@ This is an integration/acceptance gate, not a delayed accessibility or testing i
 - 2026-11-12: Published as https://github.com/octiv-fortune/story-within/issues/10; native sub-issue and blocking relationships preserved. Implementation remains ON HOLD.
 
 - 2026-11-12: The user resumed implementation with implement-spec, starting at the first unblocked ticket, and required native build verification before changes. The prior implementation hold is revoked.
+
+
+- 2026-11-12: Functional prerequisites 04/05/08 are resolved after user-confirmed hint/narration, background/replacement/interruption recovery, and first-open/cancel/reopen/withdrawal checks. Current source passes 64 native workflow tests, rendered preview UI regression, Debug simulator, Release iOS and signed iPhone builds. This gate remains needs-info pending complete accessibility-size Dynamic Type/VoiceOver/Reduce Motion and remaining physical negative/recovery verification. Actual interruption trigger was not specified, so no call/headset-specific result is asserted. See [walkthrough](../evidence/ticket-09-walkthrough.md).
