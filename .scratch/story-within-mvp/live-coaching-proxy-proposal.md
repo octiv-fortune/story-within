@@ -1,6 +1,6 @@
 # Minimal live coaching proxy proposal
 
-Status: draft for review; no endpoint exists and no backend implementation or deployment is authorized by this proposal.
+Status: parked for possible later cloud work. On 2026-11-12 the user selected Apple on-device English coaching first. No endpoint exists and no backend implementation or deployment is authorized by this proposal.
 Related work: [ticket 10](issues/10-live-storytelling-coach.md), [approved specification](spec.md).
 
 ## Recommended hosting and authentication

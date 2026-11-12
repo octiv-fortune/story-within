@@ -3,7 +3,7 @@
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
 Completed local tickets: 01, 02, 03, 04, 05, 06, 07, 08.
-Current verification gate: 09 (remaining functional verification only); accessibility checks explicitly deferred by the user for this MVP. No implementation ticket is currently claimed.
+Current verification gate: 09 (remaining functional verification only); accessibility checks explicitly deferred by the user for this MVP. Ticket 10 is now claimed for user-approved Apple on-device English coaching.
 Ticket 08 is resolved after rendered UI regression and user-confirmed first-open/cancel/reopen/withdrawal verification. Ticket 09 remains incomplete.
 
 ## Baseline
@@ -152,3 +152,8 @@ The user confirmed “Passed; microphone stays stopped and draft plays,” follo
 ## Live coaching hosting recommendation
 
 2026-11-12: The user requested the simplest hosting/authentication setup, preferring OpenAI, and confirmed ChatGPT Plus. The reviewed-source proposal recommends one Supabase project for Edge Function hosting and managed pre-created demo-user authentication, with OpenAI Responses API for coaching and a server-only project credential. The native app stays Swift/SwiftUI/URLSession/Keychain; the small TypeScript backend is proposed scope, not implemented or deployed. OpenAI subscription API-credit eligibility, private-client sign-in limits, Sites considerations, Supabase authentication and free-plan limitations are cited in [the proposal](live-coaching-proxy-proposal.md). Ticket 10 remains needs-info until the backend scope/accounts/endpoint/funding are available. No application code changed or new build/test result is claimed.
+
+
+## Apple on-device coaching decision
+
+2026-11-12: After reviewing Apple's current Foundation Models documentation and device/language limits, the user selected on-device English coaching first, with demo mode on unsupported devices. Spec v0.3 and ticket 10 reflect this explicit provider/scope amendment. The unchanged native project passed a fresh Debug simulator build before feature changes (/private/tmp/story-within-coach-baseline.log). Root project formatting SHA remains unchanged. Supabase/OpenAI setup is parked for this slice; later transcription/translation scope and language-review prerequisites remain visible. The optional fm CLI availability probe could not run because its separate machine-wide CLI legal notice has not been accepted; no privileged acceptance was attempted, and the implementation will use the app framework.

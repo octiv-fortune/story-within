@@ -1,6 +1,6 @@
-# 10: Coach a parent's story through the live service
+# 10: Coach a parent's story with Apple on-device intelligence
 
-Status: needs-info
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -8,27 +8,28 @@ GitHub issue: https://github.com/octiv-fortune/story-within/issues/11
 Milestone: M2
 Blocked by: 03: Develop an idea through the demo storytelling coach
 GitHub blockers: https://github.com/octiv-fortune/story-within/issues/4
-External prerequisites: Secure coaching proxy and reviewed contract/configuration. If it must be built or deployed by this project, first obtain a separate reviewed backend scope; this ticket does not silently authorize a backend stack or deployment.
+External prerequisites: Eligible Apple Intelligence device/model availability for actual local-model verification. No secure proxy, paid API account, or cloud credentials are needed for the user-selected slice.
 Spec acceptance: AC-03, AC-04, AC-14, AC-15, AC-16, AC-21
 Parent specification: [Approved Story Within specification](../spec.md) (approved in chat on 2026-11-12).
 
 ## What to build
 
-A parent can choose disclosed live coaching, receive contextual short guidance, and continue into the same recording journey while retaining authorship and an explicit service mode.
+Generate real short English coaching and prepared text cues with Apple Foundation Models behind StoryCoachService. Keep the parent as author, existing real recording/review/save journey, and an explicit demo mode for devices that cannot use the system model. The app remains compatible with iOS 17; guard the real provider with OS/runtime availability.
 
 ## Acceptance criteria
 
-- [ ] Before implementation readiness, record an approved available proxy endpoint, owner, client authentication/abuse controls, provider capability, operational limits and retention/deletion behavior, plus the coaching request/result/error contract.
-- [ ] Live coaching uses URLSession behind the existing StoryCoachService interface. Provider secrets remain server-side and are absent from the source shipped to devices, bundle, and logs.
-- [ ] Explain which coaching text/context leaves the device and obtain a deliberate action before the first cloud request. Send only relevant bounded context and never create a persistent child profile.
-- [ ] Actual service scenarios produce at most one primary question, honor the parent's decisions and skip/start-recording actions, avoid whole-story generation, and avoid diagnostic, therapeutic, or invented cultural claims.
-- [ ] Prepare optional cues before capture; cue failure cannot block recording or trigger live narration analysis.
-- [ ] Loading, cancellation, timeout, unavailable service, and invalid response states retain parent input and offer retry/continue. A failure never silently swaps in mock output.
-- [ ] Native contract/workflow fixtures cover success/errors/cancellation, and real proxy calls demonstrate the complete parent action → live response → recording path; explicit demo mode remains usable offline.
+- [ ] On an eligible device with a ready model, the coach uses real on-device generation with a clear Apple Intelligence/on-device mode label. Check runtime and supported language before requests; do not promise capability from device identity alone.
+- [ ] Unsupported OS/device/model availability uses clearly labeled deterministic demo coaching, explains the limitation where useful, and never blocks recording or saving. No cloud account, API credentials, backend or third-party iOS dependency is introduced.
+- [ ] Responses contain short guidance and at most one primary question, honor the parent's choices and skips, avoid whole-story writing and unsupported diagnostic/cultural claims, and preserve Start Recording at any point.
+- [ ] Prepare bounded contextual text cues before capture. Never request analysis of live narration, send audio to the model, autoplay a hint or automatically resume recording. Bound prompts to the model context window without mutating the parent's full session text.
+- [ ] Real-model errors, unavailability changes, unsupported language, invalid/oversized output and cancellation keep parent input and offer retry/continue. A failed real response is not replaced with demo guidance while presented as actual AI. Generic cue fallback remains explicitly labeled.
+- [ ] Correct all demo-specific labels/actions in the real-provider journey. Keep preferences/conversation session-only and absent from discovery metadata.
+- [ ] At the agreed application-workflow/service seam, deterministic tests cover provider selection, valid responses/cues, failure/cancellation/stale results and recording continuity. Actual supported-device model scenarios establish genuine generation and parent-authorship behavior; doubles alone do not.
+- [ ] Debug simulator and Release iOS builds and the existing 64 tests remain green, including an older available iOS 17 runtime to establish that the optional framework does not break older-device launch. Preserve existing stories/audio when updating the iPhone.
 
 ## Demonstration
 
-Choose live coaching after disclosure, provide a tortoise idea, answer one question, then enter recording; repeat with an unavailable service and continue without losing input.
+On a supported device, enter a fictitious English tortoise idea, receive an actual contextual single-question prompt, skip/answer, prepare cues and enter the same recording/save/replay path. On an unsupported runtime show labeled demo coaching. Report actual model availability and any unperformed real-model scenarios truthfully.
 
 ## Delivery constraints and verification
 
@@ -51,3 +52,6 @@ Technical blocker is the existing coach workflow, not transcription or community
 - 2026-11-12: Following the user's direction to prioritize MVP functionality and defer accessibility checks, a [minimal coaching proxy contract proposal](../live-coaching-proxy-proposal.md) was drafted for review. It maps to the existing Swift StoryCoachService and keeps live coaching as the next functional slice. It is not an available endpoint or approved backend deployment; status remains needs-info until the stated owner/hosting/authentication/provider/limits/retention decisions and service are available.
 
 - 2026-11-12: On the user's hosting/authentication recommendation request, official documentation was checked and the proposal now recommends OpenAI Responses API behind one Supabase Edge Function, with Supabase Auth pre-created email/password demo users and public signup disabled. The user confirmed ChatGPT Plus; current API-credit benefits do not cover that plan, so separate API funding is required for this architecture. Private-client Sign in with ChatGPT access is limited; it is not assumed available for this private repository. The server-side TypeScript scope addition remains a recommendation pending review, with no resources, accounts or deployment created.
+
+
+- 2026-11-12: The user explicitly chose Apple on-device English coaching first, with demo mode on unsupported devices. Prior proxy/cloud-auth requirements in historical comments are superseded for this slice. Claimed from integration 29ec22c after the unchanged native Debug simulator build passed (/private/tmp/story-within-coach-baseline.log). No cloud deployment or credential setup is performed. Full accessibility checks remain user-deferred.

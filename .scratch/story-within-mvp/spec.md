@@ -5,7 +5,7 @@ Approval: Specification and ticket breakdown approved by the user on 2026-11-12.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published with 14 native sub-issues and their approved blocking relationships.
 GitHub issue: https://github.com/octiv-fortune/story-within/issues/1
-Version: 0.2
+Version: 0.3
 Date: 2026-11-12 (Africa/Johannesburg)
 Source: [MVP implementation brief](../../docs/agents/product-brief.md) and the user's workflow and constraints.
 
@@ -25,7 +25,7 @@ The completed capstone journey adds live coaching, editable transcription, and e
 
 | Capability | M1: working local MVP | M2: complete capstone language journey | M3: optional remote publishing |
 | --- | --- | --- | --- |
-| Native home, two starting approaches, coach | Functional UI with deterministic coaching labeled as demo | Live coaching through a secure proxy | Retained |
+| Native home, two starting approaches, coach | Functional UI with deterministic coaching labeled as demo | Real Apple on-device English coaching on eligible devices; explicit demo mode elsewhere. Cloud coaching may be revisited later. | Retained |
 | Record, pause, resume, stop, replay | Real microphone capture and original voice playback | Retained | Retained |
 | Prepared hints | Contextual deterministic cues, requested by parent while paused | May be prepared by live coaching; no live narration analysis | Retained |
 | Drafts and personal library | Real local persistence and audio files | Retained | Retained |
@@ -168,7 +168,7 @@ These implementation decisions were approved in review. No changes have been mad
 | StoryRepository | Draft/story edits, owned assets, library queries | Durable writes, stable identity, fetch/reopen/delete, meaningful errors |
 
 - Define Swift protocols and deterministic mock AI implementations before live implementations. Do not mock recording in the normal app journey. Test doubles for audio are allowed in automated workflow tests; device verification must use AVFoundation.
-- Live implementations use URLSession and a secure backend proxy. Provider credentials must not be embedded in source, app configuration shipped to devices, logs, or the app bundle. Backend endpoint, authentication/abuse controls, deployment ownership, provider capabilities, limits, and deletion/retention behavior must be established before live integration tickets are ready.
+- User-approved amendment (2026-11-12): implement real English coaching first using Apple Foundation Models on eligible iOS 26+ devices, behind StoryCoachService. Check runtime/model/language availability; keep the app target iOS 17+ with explicitly labeled demo coaching on unsupported devices. Do not silently switch a failed real-model response to demo output. This slice needs no cloud account, API key, authentication server or proxy. Other live cloud implementations use URLSession and a secure backend proxy. Provider credentials must not be embedded in source, app configuration shipped to devices, logs, or the app bundle. Backend endpoint, authentication/abuse controls, deployment ownership, provider capabilities, limits, and deletion/retention behavior must be established before live integration tickets are ready.
 - The iOS application stays Swift-only. No backend provider or additional framework is selected by this spec; the proxy is an integration prerequisite with a separate reviewed implementation/deployment decision if this repository must supply it. A remote community backend is not a prerequisite for a private AI proxy.
 - Specify and verify the proxy request/response contract in the live-integration tickets, including request identity, service operation, language information, result provenance, error categories, upload limits, cancellation/timeout behavior, and source revision. Do not select an unverified provider model or promise language coverage now.
 - Cloud processing requires a clear, deliberate action after disclosure. Cancellation and errors preserve local content. Avoid logging recordings, full coaching conversations, transcripts, or child-specific preferences.
@@ -229,7 +229,7 @@ The user confirmed this test boundary on 2026-11-12: exercise the create → rec
 | AC-13 | M1 | Private stories are absent from community results. Local preview requires confirmation naming the voice recording and its on-device scope; cancellation preserves privacy and withdrawal removes the preview. |
 | AC-14 | M1/M2 | Demo coaching, sample transcripts/translations, and local community previews are labeled where used; no live failure silently substitutes a sample as a real result. |
 | AC-15 | M1/M2 | Save and playback work without network access, AI results, or a translation. Missing/unavailable content has a recoverable state. |
-| AC-16 | M2 | Consented live coaching returns contextual short guidance via the proxy without shipping provider secrets in the application. |
+| AC-16 | M2 coaching, amended | Eligible devices generate contextual short English coaching and prepared text cues with Apple Foundation Models on-device. Keep at most one primary question, parent authorship, explicit mode/availability, retry/continue on failure and labeled demo support on other iOS 17+ devices. No provider secrets, cloud account or proxy is required for this slice. |
 | AC-17 | M2 | Consented live transcription uses the parent's finalized recording, returns editable text, and preserves the recording and manual edits on timeout, cancellation, or failure. |
 | AC-18 | M2 | Translation requests use reviewed source text and a validated language direction; original and generated text are visible and manually editable. |
 | AC-19 | M2 | Transcript and translation edits survive relaunch. Source edits flag stale translations and delayed responses cannot silently overwrite newer parent work. |
@@ -288,3 +288,6 @@ The `ready-for-agent` triage label follows to-spec's convention. Specification a
 
 
 - 2026-11-12: User direction: “Remember this is an MVP, I think let's skip the accessibility checks for now and focus on the functionality.” This amends the current MVP verification gate only; no accessibility pass, removal of existing support, M2 cancellation, backend implementation or deployment is implied.
+
+
+- 2026-11-12: User selected “Apple on-device coaching first — no backend or API credentials; keep demo mode on unsupported devices.” This supersedes the immediate Supabase/OpenAI coaching proposal. It does not establish African-language translation quality or silently cancel the later transcription/translation scope. Cloud setup is not executed for this slice.
