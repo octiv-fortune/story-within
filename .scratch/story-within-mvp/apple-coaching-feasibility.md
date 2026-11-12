@@ -13,3 +13,9 @@ Use availability-guarded native code so the iOS 17 app still launches with demo 
 English is the current coaching scope. isiZulu/isiXhosa are not listed in the current supported-language set, so this decision does not validate African-language translation. Preserve the separate language-service tickets. [Language handling](https://developer.apple.com/documentation/foundationmodels/supporting-languages-and-locales-with-foundation-models.md)
 
 No cloud account, API key, authentication service or proxy is needed for this local coaching slice. Preferences and conversation stay session-only on device; recording remains AVFoundation and the parent remains the storyteller. Accessibility checks remain explicitly deferred by the user.
+
+## Resumed-session checks
+
+The unchanged integration project passed another Debug generic iOS Simulator build before work resumed: `/private/tmp/story-within-coach-resume-baseline.log`, `BUILD SUCCEEDED`. The existing root project-file formatting delta remains byte-for-byte unchanged.
+
+A standalone Swift probe using the FoundationModels framework compiled and ran on the development Mac without using the separate `fm` CLI. Its actual output was `Development Mac model availability: unavailable(...modelNotReady)`. It therefore issued no fictitious coaching request and establishes no real-generation or iPhone availability result. The probe and output remain temporary under `/private/tmp/story-within-apple-availability*`; the app's iPhone result still needs verification after implementation. No machine-wide CLI terms were accepted and no settings or model-download configuration was changed.
