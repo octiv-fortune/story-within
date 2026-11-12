@@ -41,3 +41,8 @@ Use a disposable new story for replacement, deletion and permission tests. Prese
 Real: AVFoundation capture/pause/resume/playback; local SwiftData/audio storage; editable parent-authored text; bundled licensed human demo audio; explicit local preview and withdrawal.
 
 Demo: deterministic on-device coach and prepared text cues. No live AI, automatic transcription, live translation, or remote community publishing is claimed. M2 remains blocked on a secure proxy contract and competent language reviewers.
+
+
+## User feedback on the updated build
+
+The user replied “Everything looks great” to the combined existing-story, hint/resume/save/reopen, replacement cancellation, background finalization, and preview/withdrawal check, but specifically reported a blank popup when tapping Review for local community preview. Record the preceding recording/recovery/existing-story checks as user-passed; do not infer preview confirmation or withdrawal success past the failing sheet. Ticket 08 is reopened/claimed for the presentation defect. Full VoiceOver/Dynamic Type, route interruption when available, permission denial and remaining physical failure checks remain unverified.

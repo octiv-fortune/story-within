@@ -1,6 +1,6 @@
 # 08: Choose and withdraw an explicitly local community preview
 
-Status: resolved
+Status: claimed
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -19,7 +19,7 @@ A parent can deliberately preview a saved story in this device's community colle
 ## Acceptance criteria
 
 - [x] Saving stays private by default; private stories never enter community queries or cards.
-- [x] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
+- [ ] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
 - [x] Confirmation explicitly mentions the original voice recording. Cancelling changes no visibility; failed persistence never shows successful publication.
 - [x] Confirmed local preview is discoverable with its scope label after relaunch; withdrawal removes it from community results while retaining the private personal copy.
 - [x] Coaching history and child-specific descriptions are excluded from discovery metadata; parents can review any personal content contained in the actual audio/text before confirming.
@@ -59,3 +59,6 @@ Private saves remain excluded from Explore. A separate review names attribution,
 All **43 native workflow tests** passed on iOS 17.5: all 36 accepted regressions plus seven privacy/preview cases, using deterministic audio and real temporary storage (`/private/tmp/story-within-08-green-full.log`). Candidate Debug simulator and Release iOS builds passed. One integration generic Debug iOS Simulator build passed with signing disabled: `/private/tmp/story-within-integration-ticket08.log`; outputs: `/private/tmp/story-within-integration-ticket08`. No source delta required a duplicate full-suite run. The known unstaged Xcode project formatting delta was preserved byte-for-byte, excluded from this commit, and verified semantically identical to the committed project.
 
 Physical private/cancel/exact-content consent/local discovery/withdraw/delete walkthrough, privacy comprehension, VoiceOver, full Dynamic Type and rendered control checks remain unverified for the ticket 09 acceptance gate. Source/tests/builds do not establish those manual results. No phone, GitHub, or further source merge occurred in this checkpoint.
+
+
+- 2026-11-12: Reopened after the updated iPhone walkthrough: the user reports a blank popup on tapping Review for local community preview. Other requested recording/hint/reopen, replacement-cancel, background-finalization and existing-story checks were reported as looking great. First-opening sheet rendering requires an isolated UI reproduction and repair; workflow-only consent tests did not catch this presentation defect. Preview confirmation/discovery/withdrawal acceptance remains open.
