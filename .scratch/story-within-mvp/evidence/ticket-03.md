@@ -55,3 +55,18 @@ Post-integration native tests and Debug/Release builds will be recorded below af
 - Computed WCAG contrast for the new screens' opaque colors: ink/ivory 10.96:1, ink/white 12.03:1, white/forest 11.81:1. This calculation does not substitute for the pending rendered accessibility inspection.
 
 Remaining verification: manual unlock followed by interactive native start → type → coach → skip → studio navigation and accessibility-size/VoiceOver traversal. Real microphone/hint/device verification remains with the integration owner; ticket 04 has not been implemented here. No ticket resolution, remote publication, or physical-device result was claimed by this slice.
+
+## Combined ticket 06 verification
+
+Accepted review/metadata/personal-library integration `3cf2c25` was merged into this candidate as `f77505a`.
+
+- Retained both initializer dependencies: optional coach injection and the accepted default `commitChanges` closure (kept last for existing trailing-closure callers).
+- Preserved the optional `StoryRecord` review additions and old-store/bare-UUID recording compatibility, manual transcript provenance, review keep/discard/cancel behavior, deletion ownership checks, paused capture guards and announcements.
+- Home Create still opens the coach/start flow. Recent and personal-library entries still call `openStory` and open review directly; opening clears session-only coach state. Shared `RecordingStudio` remains internal for same-app reuse.
+- The creation sheet now also disables interactive dismissal, retaining the shared studio's explicit close/keep/discard protections after the transition from coaching.
+- Full combined suite: **31 tests, zero failures**, actual iOS 27.0 assigned iPhone 18 Pro, parallel testing disabled and diagnostics collection off. Log: `/private/tmp/story-within-03-review-integrated-tests.log`; result bundle: `/private/tmp/story-within-03-derived/Logs/Test/Test-StoryWithin-2026.11.12_08-24-58-+0200.xcresult`. All accepted recording/pause/review regressions and all eight coaching checks ran; overall native runner time was roughly 55 seconds, test execution 1.15 seconds. No simulator reset or fallback was needed.
+- Debug generic iOS Simulator: **BUILD SUCCEEDED**, `/private/tmp/story-within-03-review-debug-final.log`.
+- Release generic iOS (signing disabled): **BUILD SUCCEEDED**, `/private/tmp/story-within-03-review-release-final.log`.
+- `git diff --check` passed. No unrelated tests or feature scope were added.
+
+The locked-Mac interactive UI/VoiceOver gap remains exactly as recorded above. CUA was not retried and no alternate input bypass was attempted. No phone installation or physical microphone result is claimed for this combined candidate.
