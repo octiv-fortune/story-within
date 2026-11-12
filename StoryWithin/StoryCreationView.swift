@@ -19,9 +19,15 @@ struct StoryCreationView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         Label(workflow.coaching.modeLabel, systemImage: "sparkle")
                             .font(.subheadline.weight(.semibold))
+                        if let reason = workflow.coaching.availabilityMessage {
+                            Text(reason).font(.footnote)
+                        }
                         if workflow.coaching.context != nil { coach } else { start }
-                        Text("You are the storyteller. These short demo prompts offer ideas; you decide what to tell.")
+                        Text(workflow.coaching.authorshipMessage)
                             .font(.footnote)
+                        if let message = workflow.coaching.modelContextMessage {
+                            Text(message).font(.footnote)
+                        }
                         Label("Preferences and this conversation stay in this session. They are not added to saved story details.", systemImage: "lock")
                             .font(.footnote)
                     }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
@@ -45,18 +51,29 @@ struct StoryCreationView: View {
                     if let error { UIAccessibility.post(notification: .announcement, argument: error) }
                 }
                 .safeAreaInset(edge: .bottom) {
-                    Button {
-                        editingText = false
-                        Task {
-                            if await workflow.prepareCoachedRecording(approach: approach, text: startingText, thought: answer) {
-                                showingStudio = true
+                    VStack(spacing: 10) {
+                        Button {
+                            editingText = false
+                            let thought = answer
+                            answer = ""
+                            Task {
+                                if await workflow.prepareCoachedRecording(approach: approach, text: startingText, thought: thought) {
+                                    showingStudio = true
+                                }
                             }
+                        } label: {
+                            Label(workflow.coaching.isPreparingCues ? "Preparing cues…" : "Start Recording", systemImage: "mic.fill")
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                        }.buttonStyle(StoryPrimaryButton()).disabled(workflow.coaching.isPreparingCues)
+                        if workflow.coaching.isPreparingCues {
+                            Button("Record without waiting") {
+                                let thought = answer
+                                answer = ""
+                                workflow.prepareRecordingWithoutCues(thought: thought)
+                                showingStudio = true
+                            }.buttonStyle(.bordered).frame(minHeight: 44)
                         }
-                    } label: {
-                        Label(workflow.coaching.isPreparingCues ? "Preparing cues…" : "Start Recording", systemImage: "mic.fill")
-                            .frame(maxWidth: .infinity, minHeight: 36)
-                    }.buttonStyle(StoryPrimaryButton()).disabled(workflow.coaching.isPreparingCues)
-                        .padding(16).background(StoryPalette.ivory)
+                    }.padding(16).background(StoryPalette.ivory)
                 }
             }.tint(StoryPalette.forest)
         }
@@ -108,17 +125,17 @@ struct StoryCreationView: View {
                 }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                     .background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
-            if workflow.coaching.isResponding { ProgressView("Preparing a demo prompt…") }
+            if workflow.coaching.isResponding { ProgressView(workflow.coaching.promptProgressLabel) }
             if let error = workflow.coaching.errorMessage {
                 VStack(alignment: .leading, spacing: 12) {
                     Label(error, systemImage: "exclamationmark.triangle")
-                    Button("Retry demo coaching") { Task { await workflow.coaching.retry() } }
+                    Button(workflow.coaching.retryLabel) { Task { await workflow.coaching.retry() } }
                         .buttonStyle(.bordered).frame(minHeight: 44)
                 }.padding(18).background(.white, in: RoundedRectangle(cornerRadius: 18))
             }
             if let reply = workflow.coaching.reply {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Demo coach").font(.headline).accessibilityAddTraits(.isHeader)
+                    Text(workflow.coaching.coachTitle).font(.headline).accessibilityAddTraits(.isHeader)
                     Text(reply.guidance)
                     if let question = reply.question { Text(question).font(.title3.weight(.semibold)) }
                 }.accessibilityElement(children: .combine)

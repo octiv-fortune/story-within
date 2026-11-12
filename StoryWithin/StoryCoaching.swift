@@ -27,11 +27,19 @@ struct StoryCoachReply: Equatable {
 @MainActor
 protocol StoryCoachService {
     var modeLabel: String { get }
+    var availabilityMessage: String? { get }
+    var isDemo: Bool { get }
     func respond(to context: StoryCoachContext) async throws -> StoryCoachReply
     func prepareCues(for context: StoryCoachContext?) async throws -> [String]
 }
 
+extension StoryCoachService {
+    var availabilityMessage: String? { nil }
+    var isDemo: Bool { true }
+}
+
 struct DemoStoryCoachService: StoryCoachService {
+    var availabilityMessage: String? = nil
     let modeLabel = "Demo coaching · On this device"
     func respond(to context: StoryCoachContext) async throws -> StoryCoachReply {
         let detail = context.turns.compactMap(\.parentText).last ?? context.initialText
@@ -80,6 +88,17 @@ final class StoryCoaching {
                               "Give your character a small choice.",
                               "Find an ending that feels right to you."]
     var modeLabel: String { service.modeLabel }
+    var availabilityMessage: String? { service.availabilityMessage }
+    var genericCueLabel: String { service.isDemo ? "Generic cues · Demo" : "Generic cues · Not AI-generated" }
+    var coachTitle: String { service.isDemo ? "Demo coach" : "On-device coach" }
+    var promptProgressLabel: String { service.isDemo ? "Preparing a demo prompt…" : "Preparing an on-device prompt…" }
+    var retryLabel: String { service.isDemo ? "Retry demo coaching" : "Retry on-device coaching" }
+    var modelContextMessage: String? {
+        service.isDemo ? nil : "English coaching uses a short excerpt of your starting point and recent choices. Your full thoughts stay in this session."
+    }
+    var authorshipMessage: String {
+        "You are the storyteller. These short \(service.isDemo ? "demo" : "on-device") prompts offer ideas; you decide what to tell."
+    }
     var parentAnswers: [String] { context?.turns.compactMap(\.parentText) ?? [] }
 
     init(service: any StoryCoachService) { self.service = service }
@@ -102,12 +121,14 @@ final class StoryCoaching {
             guard !cues.isEmpty else { throw CocoaError(.fileReadUnknown) }
             preparedCues = cues
             usingGenericCues = context == nil || context?.initialText.isEmpty == true
-            cueLabel = usingGenericCues ? "Generic cues · Demo" : "Prepared cues · Demo"
+            cueLabel = usingGenericCues ? genericCueLabel : (service.isDemo ? "Prepared cues · Demo" : "Prepared cues · Apple Intelligence on device")
+        } catch is CancellationError {
+            return false
         } catch {
             guard requestID == id, !Task.isCancelled else { return false }
             preparedCues = Self.genericCues
             usingGenericCues = true
-            cueLabel = "Generic cues · Demo preparation unavailable"
+            cueLabel = service.isDemo ? "Generic cues · Demo preparation unavailable" : "Generic cues · On-device preparation unavailable"
         }
         return true
     }
@@ -143,7 +164,8 @@ final class StoryCoaching {
         } catch is CancellationError { }
         catch {
             guard requestID == id, !Task.isCancelled else { return }
-            errorMessage = "Demo coaching could not continue. Your choices are kept. Retry, skip, or start recording."
+            let detail = (error as? StoryCoachFailure).map { " " + $0.explanation } ?? ""
+            errorMessage = "\(service.isDemo ? "Demo coaching" : "On-device coaching") could not continue.\(detail) Your choices are kept. Retry, skip, or start recording."
         }
     }
 
@@ -159,6 +181,14 @@ final class StoryCoaching {
     private func cancelPendingReply() {
         requestID = UUID()
         isResponding = false
+        isPreparingCues = false
+    }
+
+    func useGenericCues() {
+        cancelPendingReply()
+        preparedCues = Self.genericCues
+        usingGenericCues = true
+        cueLabel = genericCueLabel
     }
 
     func reset() {

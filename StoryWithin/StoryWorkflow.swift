@@ -130,13 +130,13 @@ final class StoryWorkflow {
         guard captureState == .paused, let cueIndex, !cues.indices.contains(cueIndex) else { return nil }
         return "You’ve reached the last cue. Continue in your own words, or stop to review your story."
     }
-    var inspirationLabel: String { coaching.cueLabel.isEmpty ? "Generic cues · Demo" : coaching.cueLabel }
+    var inspirationLabel: String { coaching.cueLabel.isEmpty ? coaching.genericCueLabel : coaching.cueLabel }
     private var cues: [String] { coaching.preparedCues.isEmpty ? StoryCoaching.genericCues : coaching.preparedCues }
 
     init(storageURL: URL, audio: StoryAudio, coach: (any StoryCoachService)? = nil,
          demoLibrary: DemoLibrary? = nil,
          commitChanges: @escaping (ModelContext) throws -> Void = { try $0.save() }) throws {
-        self.coaching = StoryCoaching(service: coach ?? DemoStoryCoachService())
+        self.coaching = StoryCoaching(service: coach ?? StoryCoachProvider.makeDefault())
         self.storageURL = storageURL
         self.audio = audio
         self.demoLibrary = demoLibrary ?? .bundled()
@@ -329,6 +329,13 @@ final class StoryWorkflow {
         guard await coaching.prepareCues() else { return false }
         prepareNewRecording()
         return true
+    }
+
+    func prepareRecordingWithoutCues(thought: String = "") {
+        guard !hasPendingRecording, captureState != .requestingPermission else { return }
+        coaching.keepThought(thought)
+        coaching.useGenericCues()
+        prepareNewRecording()
     }
 
     func prepareNewRecording() {

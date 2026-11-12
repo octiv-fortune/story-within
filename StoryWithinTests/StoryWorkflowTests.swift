@@ -692,7 +692,7 @@ final class StoryWorkflowTests: XCTestCase {
 
     func testDraftAndStaleReviewCannotBypassFreshConsentOrIncludeCoachingContext() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio(), coach: DemoStoryCoachService())
         await workflow.coaching.begin(approach: .listener, text: "PRIVATE child preference")
         await workflow.coaching.answer("PRIVATE coaching answer")
         await workflow.startRecording(); workflow.stopRecording()
