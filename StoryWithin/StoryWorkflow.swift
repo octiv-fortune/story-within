@@ -53,6 +53,7 @@ enum CaptureState: Equatable { case idle, requestingPermission, recording, stopp
 @MainActor
 @Observable
 final class StoryWorkflow {
+    let coaching: StoryCoaching
     private let container: ModelContainer
     private let context: ModelContext
     private let storageURL: URL
@@ -68,7 +69,8 @@ final class StoryWorkflow {
     private(set) var permissionDenied = false
     private(set) var isPlaying = false
 
-    init(storageURL: URL, audio: StoryAudio) throws {
+    init(storageURL: URL, audio: StoryAudio, coach: (any StoryCoachService)? = nil) throws {
+        self.coaching = StoryCoaching(service: coach ?? DemoStoryCoachService())
         self.storageURL = storageURL
         self.audio = audio
         try FileManager.default.createDirectory(at: storageURL, withIntermediateDirectories: true)
@@ -138,6 +140,16 @@ final class StoryWorkflow {
             catch { errorMessage = "This take could not be finalized. Retry or explicitly discard it. \(error.localizedDescription)"; return }
         }
         retainDraft()
+    }
+
+    @discardableResult
+    func prepareCoachedRecording(approach: StoryStartingApproach? = nil, text: String = "", thought: String = "") async -> Bool {
+        guard !hasPendingRecording, captureState != .requestingPermission else { return false }
+        if coaching.context == nil, let approach { coaching.setStartingPoint(approach: approach, text: text) }
+        coaching.keepThought(thought)
+        guard await coaching.prepareCues() else { return false }
+        prepareNewRecording()
+        return true
     }
 
     func prepareNewRecording() {
@@ -273,6 +285,7 @@ final class StoryWorkflow {
     }
 
     func openStory(id: UUID) {
+        coaching.reset()
         audio.stopPlayback(); isPlaying = false
         currentStory = stories.first { $0.id == id }
         title = currentStory?.title ?? "My new story"
