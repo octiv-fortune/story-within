@@ -1,0 +1,329 @@
+import Foundation
+import Observation
+import SwiftData
+
+struct Story: Identifiable, Equatable {
+    let id: UUID
+    var title: String
+    var audioName: String
+    let duration: TimeInterval
+    var isSaved: Bool
+    let visibility: String
+    let createdAt: Date
+    var updatedAt: Date
+}
+
+@Model
+final class StoryRecord {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var audioName: String
+    var duration: TimeInterval
+    var isSaved: Bool
+    var visibility: String
+    var createdAt: Date
+    var updatedAt: Date
+
+    init(_ story: Story) {
+        id = story.id; title = story.title; audioName = story.audioName
+        duration = story.duration; isSaved = story.isSaved; visibility = story.visibility
+        createdAt = story.createdAt; updatedAt = story.updatedAt
+    }
+    var story: Story {
+        Story(id: id, title: title, audioName: audioName, duration: duration,
+              isSaved: isSaved, visibility: visibility, createdAt: createdAt, updatedAt: updatedAt)
+    }
+}
+
+@MainActor
+protocol StoryAudio: AnyObject {
+    var captureDuration: TimeInterval { get }
+    var playbackTime: TimeInterval { get }
+    var isPlaying: Bool { get }
+    func requestPermission() async -> Bool
+    func startRecording(to url: URL) throws
+    func finishRecording() throws -> TimeInterval
+    func play(url: URL, fromStart: Bool) throws
+    func pausePlayback()
+    func stopPlayback()
+}
+
+enum CaptureState: Equatable { case idle, requestingPermission, recording, stopped, failed }
+
+@MainActor
+@Observable
+final class StoryWorkflow {
+    private let container: ModelContainer
+    private let context: ModelContext
+    private let storageURL: URL
+    private let audio: StoryAudio
+    private var captureURL: URL?
+    private var captureID: UUID?
+    private var finalizedDuration: TimeInterval?
+    var captureState: CaptureState = .idle
+    private(set) var currentStory: Story?
+    private(set) var stories: [Story] = []
+    var title = "My new story"
+    var errorMessage: String?
+    private(set) var permissionDenied = false
+    private(set) var isPlaying = false
+
+    init(storageURL: URL, audio: StoryAudio) throws {
+        self.storageURL = storageURL
+        self.audio = audio
+        try FileManager.default.createDirectory(at: storageURL, withIntermediateDirectories: true)
+        container = try ModelContainer(for: StoryRecord.self, configurations:
+            ModelConfiguration(url: storageURL.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
+        context = ModelContext(container)
+        context.autosaveEnabled = false
+        try refreshStories()
+    }
+
+    var currentAudioURL: URL? {
+        currentStory.map { story in
+            // The first installed app stored bare UUID.m4a filenames. Keep resolving
+            // those under Recordings; newly retained drafts can reference Captures.
+            let relative = story.audioName.hasPrefix("Captures/") ? story.audioName : "Recordings/\(story.audioName)"
+            return storageURL.appendingPathComponent(relative)
+        }
+    }
+    var elapsedRecording: TimeInterval { audio.captureDuration }
+    var playbackTime: TimeInterval { audio.playbackTime }
+    var hasPendingRecording: Bool { captureID != nil }
+    var canLeaveReview: Bool { !hasPendingRecording && captureState != .recording && captureState != .requestingPermission }
+
+    func startRecording() async {
+        guard captureState != .recording, captureState != .requestingPermission, !hasPendingRecording else { return }
+        errorMessage = nil; permissionDenied = false
+        audio.stopPlayback(); isPlaying = false
+        captureState = .requestingPermission
+        guard await audio.requestPermission() else {
+            permissionDenied = true
+            captureState = .idle
+            errorMessage = "Microphone access is off. Allow it in Settings to record your story."
+            return
+        }
+        do {
+            let folder = storageURL.appendingPathComponent("Captures")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let id = UUID()
+            let url = folder.appendingPathComponent("\(id.uuidString).m4a")
+            try audio.startRecording(to: url)
+            captureID = id; captureURL = url; finalizedDuration = nil
+            currentStory = nil; title = "My new story"
+            captureState = .recording
+        } catch { captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
+    }
+
+    func stopRecording() {
+        guard captureState == .recording else { return }
+        do {
+            finalizedDuration = try audio.finishRecording()
+            captureState = .stopped
+            retainDraft()
+        } catch { captureState = .failed; errorMessage = "Recording could not finish. \(error.localizedDescription)" }
+    }
+
+    func retryKeepingRecording() {
+        if let story = currentStory, !story.audioName.hasPrefix("Captures/") {
+            do {
+                try removeRedundantAudio(for: story)
+                clearPendingCapture()
+                errorMessage = nil
+            } catch { errorMessage = "Your private draft is kept, but an extra audio copy could not be removed. Retry keeping or explicitly discard it. \(error.localizedDescription)" }
+            return
+        }
+        if finalizedDuration == nil {
+            do { finalizedDuration = try audio.finishRecording() }
+            catch { errorMessage = "This take could not be finalized. Retry or explicitly discard it. \(error.localizedDescription)"; return }
+        }
+        retainDraft()
+    }
+
+    func prepareNewRecording() {
+        guard !hasPendingRecording else { return }
+        stopPlayback()
+        currentStory = nil; title = "My new story"; errorMessage = nil; permissionDenied = false
+        captureState = .idle
+    }
+
+    func handleInterruption() {
+        if captureState == .recording {
+            stopRecording()
+            if currentStory != nil { errorMessage = "Recording stopped because audio was interrupted or the app left the screen. Your captured audio is kept as a private draft. The microphone will not restart automatically." }
+        }
+        stopPlayback()
+    }
+
+    func discardRecording() {
+        audio.stopPlayback(); isPlaying = false
+        if captureState == .recording { _ = try? audio.finishRecording(); captureState = .stopped }
+        var staged: [(original: URL, holding: URL)] = []
+        let files = FileManager.default
+        do {
+            var owned = Set<URL>()
+            if let id = currentStory?.id ?? captureID { owned.formUnion(ownedAudioURLs(id: id)) }
+            if let url = currentAudioURL { owned.insert(url) }
+            if let url = captureURL { owned.insert(url) }
+            let trash = storageURL.appendingPathComponent("Discarding")
+            try files.createDirectory(at: trash, withIntermediateDirectories: true)
+            // Stage owned files before committing metadata removal. A filesystem failure
+            // leaves the draft intact; a metadata failure restores its original files.
+            for original in owned {
+                let holding = trash.appendingPathComponent("\(original.deletingLastPathComponent().lastPathComponent)-\(original.lastPathComponent)")
+                if files.fileExists(atPath: original.path) { try files.moveItem(at: original, to: holding) }
+                if files.fileExists(atPath: holding.path) { staged.append((original, holding)) }
+            }
+            if let story = currentStory {
+                let records = try context.fetch(FetchDescriptor<StoryRecord>())
+                if let record = records.first(where: { $0.id == story.id }) { context.delete(record) }
+            }
+            try context.save()
+        } catch {
+            context.rollback()
+            var restorationFailed = false
+            for file in staged where !files.fileExists(atPath: file.original.path) {
+                do { try files.moveItem(at: file.holding, to: file.original) }
+                catch { restorationFailed = true }
+            }
+            errorMessage = restorationFailed
+                ? "Discard failed. Your audio is retained in local recovery storage. Keep this screen open and retry."
+                : "This recording could not be discarded. It has been kept. \(error.localizedDescription)"
+            return
+        }
+        do {
+            try refreshStories()
+            for file in staged { try files.removeItem(at: file.holding) }
+            currentStory = nil; captureURL = nil; captureID = nil; finalizedDuration = nil
+            captureState = .idle; errorMessage = nil
+        } catch {
+            errorMessage = "The story was removed from Home, but its local audio cleanup could not finish. Retry discarding. \(error.localizedDescription)"
+        }
+    }
+
+    private func retainDraft() {
+        guard let url = captureURL, let id = captureID, let duration = finalizedDuration else { return }
+        do {
+            guard duration > 0, (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else {
+                throw StoryFailure.emptyRecording
+            }
+            let now = Date()
+            var draft = currentStory ?? Story(id: id, title: title, audioName: "Captures/\(id.uuidString).m4a", duration: duration,
+                                             isSaved: false, visibility: "private", createdAt: now, updatedAt: now)
+            // Register the already durable original before creating staging/final
+            // copies, so a failed promotion remains discoverable after relaunch.
+            try persist(draft)
+            currentStory = draft
+            let recordings = storageURL.appendingPathComponent("Recordings")
+            try FileManager.default.createDirectory(at: recordings, withIntermediateDirectories: true)
+            let audioName = "\(id.uuidString).m4a"
+            let destination = recordings.appendingPathComponent(audioName)
+            let staged = recordings.appendingPathComponent("\(id.uuidString).pending")
+            // A failed copy may leave bytes behind. Only promote a fully copied take,
+            // and overwrite any partial destination on retry from the retained capture.
+            if FileManager.default.fileExists(atPath: staged.path) { try FileManager.default.removeItem(at: staged) }
+            try FileManager.default.copyItem(at: url, to: staged)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                _ = try FileManager.default.replaceItemAt(destination, withItemAt: staged)
+            } else { try FileManager.default.moveItem(at: staged, to: destination) }
+            draft.audioName = audioName
+            try persist(draft)
+            currentStory = draft
+            try removeRedundantAudio(for: draft)
+            clearPendingCapture()
+            errorMessage = nil
+        } catch {
+            errorMessage = currentStory == nil
+                ? "Your take has not been saved as a draft. Keep this screen open and retry. \(error.localizedDescription)"
+                : "Your private draft is kept, but audio promotion or cleanup could not finish. Retry keeping or explicitly discard it. \(error.localizedDescription)"
+        }
+    }
+
+    private func ownedAudioURLs(id: UUID) -> [URL] {
+        [storageURL.appendingPathComponent("Captures/\(id.uuidString).m4a"),
+         storageURL.appendingPathComponent("Recordings/\(id.uuidString).m4a"),
+         storageURL.appendingPathComponent("Recordings/\(id.uuidString).pending")]
+    }
+
+    private func removeRedundantAudio(for story: Story) throws {
+        let retained = currentAudioURL
+        for url in ownedAudioURLs(id: story.id) where url != retained && FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+        }
+    }
+
+    private func clearPendingCapture() {
+        captureURL = nil; captureID = nil; finalizedDuration = nil
+    }
+
+    func keepDraft() { saveCurrent(markSaved: false) }
+    func savePrivately() { saveCurrent(markSaved: true) }
+
+    private func saveCurrent(markSaved: Bool) {
+        if hasPendingRecording { retryKeepingRecording(); guard !hasPendingRecording else { return } }
+        guard var story = currentStory else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { errorMessage = "Give your story a title before saving."; return }
+        do {
+            guard let url = currentAudioURL, FileManager.default.fileExists(atPath: url.path) else { throw StoryFailure.missingAudio }
+            story.title = trimmed; story.isSaved = story.isSaved || markSaved; story.updatedAt = Date()
+            try persist(story)
+            currentStory = story; title = trimmed; errorMessage = nil
+        } catch { errorMessage = "Your changes could not be saved. Your recording is kept; retry saving. \(error.localizedDescription)" }
+    }
+
+    func openStory(id: UUID) {
+        audio.stopPlayback(); isPlaying = false
+        currentStory = stories.first { $0.id == id }
+        title = currentStory?.title ?? "My new story"
+        captureState = .stopped; errorMessage = nil
+        clearPendingCapture()
+        if let story = currentStory {
+            let source = ownedAudioURLs(id: story.id)[0]
+            let needsPromotion = story.audioName.hasPrefix("Captures/")
+            let redundantCopyExists = ownedAudioURLs(id: story.id).contains {
+                $0 != currentAudioURL && FileManager.default.fileExists(atPath: $0.path)
+            }
+            if needsPromotion || redundantCopyExists {
+                captureID = story.id
+                captureURL = FileManager.default.fileExists(atPath: source.path) ? source : nil
+                finalizedDuration = story.duration
+                errorMessage = "Your private draft is kept. Retry keeping to finish audio promotion or cleanup, or explicitly discard it."
+            }
+        }
+    }
+
+    func play(fromStart: Bool = false) {
+        guard let url = currentAudioURL else { return }
+        do { try audio.play(url: url, fromStart: fromStart); isPlaying = audio.isPlaying; errorMessage = nil }
+        catch { errorMessage = "This recording could not play. \(error.localizedDescription)"; isPlaying = false }
+    }
+    func pausePlayback() { audio.pausePlayback(); isPlaying = false }
+    func refreshPlayback() { isPlaying = audio.isPlaying }
+    func stopPlayback() { audio.stopPlayback(); isPlaying = false }
+
+    private func persist(_ story: Story) throws {
+        do {
+            let records = try context.fetch(FetchDescriptor<StoryRecord>())
+            if let record = records.first(where: { $0.id == story.id }) {
+                record.title = story.title; record.audioName = story.audioName
+                record.isSaved = story.isSaved; record.updatedAt = story.updatedAt
+            } else { context.insert(StoryRecord(story)) }
+            try context.save()
+            try refreshStories()
+        } catch { context.rollback(); throw error }
+    }
+    private func refreshStories() throws {
+        stories = try context.fetch(FetchDescriptor<StoryRecord>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])).map(\.story)
+    }
+}
+
+private enum StoryFailure: LocalizedError {
+    case emptyRecording, missingAudio
+    var errorDescription: String? {
+        switch self {
+        case .emptyRecording: "No audio was captured. Record a new take before saving."
+        case .missingAudio: "The audio file is unavailable."
+        }
+    }
+}
