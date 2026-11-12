@@ -1,6 +1,6 @@
 # 08: Choose and withdraw an explicitly local community preview
 
-Status: claimed
+Status: resolved
 Approval: Ticket breakdown approved by the user on 2026-11-12; GitHub publication authorized.
 Implementation gate: Authorized by the user on 2026-11-12; follow the approved dependency graph and retain unmet external prerequisites.
 GitHub publication: Published and linked to the parent specification.
@@ -19,7 +19,7 @@ A parent can deliberately preview a saved story in this device's community colle
 ## Acceptance criteria
 
 - [x] Saving stays private by default; private stories never enter community queries or cards.
-- [ ] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
+- [x] A separate preview step shows attribution, original audio, transcript, and selected available translations and clearly says the story is available on this device only.
 - [x] Confirmation explicitly mentions the original voice recording. Cancelling changes no visibility; failed persistence never shows successful publication.
 - [x] Confirmed local preview is discoverable with its scope label after relaunch; withdrawal removes it from community results while retaining the private personal copy.
 - [x] Coaching history and child-specific descriptions are excluded from discovery metadata; parents can review any personal content contained in the actual audio/text before confirming.
@@ -62,3 +62,9 @@ Physical private/cancel/exact-content consent/local discovery/withdraw/delete wa
 
 
 - 2026-11-12: Reopened after the updated iPhone walkthrough: the user reports a blank popup on tapping Review for local community preview. Other requested recording/hint/reopen, replacement-cancel, background-finalization and existing-story checks were reported as looking great. First-opening sheet rendering requires an isolated UI reproduction and repair; workflow-only consent tests did not catch this presentation defect. Preview confirmation/discovery/withdrawal acceptance remains open.
+
+
+## First-opening sheet repair and verification
+
+- 2026-11-12: Integrated reviewed candidate 4d44844 through no-ff merge f43aa10; app change bde75c2 binds sheet presentation directly to its story item. Baseline rendered UI reproduced an empty white sheet despite valid native snapshot preparation. The same actual-app regression passes first tap, Cancel, private review, reopen and Cancel. The simulator-only runner and fictional native fixture are retained under test-support/preview-sheet; no production test hooks, project targets, dependencies or schema changes were added.
+- All 64 workflow tests, Debug simulator and Release iOS builds passed. The identical integration source passed a generic Debug simulator build. A signed iPhone build passed and the existing app was updated in place. The user confirmed: “Preview opens immediately; cancel/reopen and withdrawal pass.” Functional ticket 08 is resolved. Full accessibility and remaining physical recovery checks remain open for ticket 09; complete MVP readiness is not claimed. See [diagnosis and actual results](../evidence/preview-sheet-fix.md).

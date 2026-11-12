@@ -46,3 +46,8 @@ Demo: deterministic on-device coach and prepared text cues. No live AI, automati
 ## User feedback on the updated build
 
 The user replied “Everything looks great” to the combined existing-story, hint/resume/save/reopen, replacement cancellation, background finalization, and preview/withdrawal check, but specifically reported a blank popup when tapping Review for local community preview. Record the preceding recording/recovery/existing-story checks as user-passed; do not infer preview confirmation or withdrawal success past the failing sheet. Ticket 08 is reopened/claimed for the presentation defect. Full VoiceOver/Dynamic Type, route interruption when available, permission denial and remaining physical failure checks remain unverified.
+
+
+## Preview defect resolved on iPhone
+
+Application fix bde75c2 is integrated through f43aa10. The rendered UI regression failed before the fix and passes afterward, including Cancel/reopen; 64 workflow tests and Debug/Release/signed iPhone builds passed. The user then confirmed “Preview opens immediately; cancel/reopen and withdrawal pass.” This supersedes the earlier pending/failing preview result. The earlier existing-story, hint/resume, save/reopen, replacement-cancel and background-finalization checks are also user-passed. Full VoiceOver, accessibility-size Dynamic Type, available call/headset route interruption, permission denial and remaining physical failure checks are still unverified. M1 readiness is not claimed.

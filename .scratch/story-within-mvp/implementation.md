@@ -2,9 +2,9 @@
 
 Integration branch: codex/story-within-mvp
 Authorization: User resumed implement-spec on 2026-11-12.
-Completed local tickets: 01, 02, 03, 04, 06, 07.
-Current claimed tickets: 05 interruptions/replacement protection (remaining device/accessibility gates) and 08 local preview presentation repair.
-Ticket 08 is reopened after a blank first-opening preview sheet; repaired build verification and user confirmation are in progress. Ticket 09 remains incomplete.
+Completed local tickets: 01, 02, 03, 04, 06, 07, 08.
+Current claimed ticket: 05 interruptions/replacement protection (remaining physical interruption/route and accessibility gates).
+Ticket 08 is resolved after rendered UI regression and user-confirmed first-open/cancel/reopen/withdrawal verification. Ticket 09 remains incomplete.
 
 ## Baseline
 
@@ -128,3 +128,10 @@ Tickets **04 and 05 remain claimed**. Physical hint/pause/resume/narration conti
 The user passed the requested existing-story opening, hint/resume/save/reopen, replacement cancellation and background-finalization checks, then reported a blank local-preview popup. Ticket 04 is resolved from source/tests/builds plus that physical hint sequence. Ticket 08 is reopened for the presentation defect; no preview/withdrawal success is inferred. Ticket 05 retains its remaining physical route/interruption/accessibility checks within the incomplete M1 verification gate.
 
 The UI defect was reproduced on a disposable simulator fixture on the first tap, with an empty white sheet and no content or Cancel control. A real rendered XCUITest failed on the missing heading; native preparation returned a valid private story. Application fix bde75c2 uses the optional story as the sheet presentation item. The same rendered test passed, 64 workflow tests and Debug/Release builds passed, and a signed in-place iPhone update succeeded. User first-open/cancel/reopen/confirmation/withdrawal verification is pending. The retained rendered regression runner is being finalized independently of production targets.
+
+
+## Preview repair accepted
+
+Reviewed source bde75c2 and retained simulator-only rendered regression integrated through no-ff merge f43aa10 (candidate 4d44844). Source/support trees match the tested candidate. All 64 workflow tests, the rendered first-open/cancel/reopen test, Debug simulator, Release iOS and signed Debug iPhone builds passed. The merged integration also passed generic Debug simulator compilation; the initial restricted macro/simulator-access failure and successful host-access retry are documented separately. Root project formatting stayed byte-for-byte unchanged and unstaged.
+
+The updated iPhone app was installed in place without a reset. User confirmed “Preview opens immediately; cancel/reopen and withdrawal pass.” Ticket 08 is resolved. Ticket 04 is resolved and its exact GitHub issue #5 was closed after the earlier physical hint journey passed. Ticket 08 GitHub issue #9 completion is being synchronized separately; dependencies remain unchanged. M1 still requires its remaining physical recovery, full VoiceOver/Dynamic Type and other recorded ticket 09 checks; M2 still lacks the secure proxy and language reviewers. See evidence/preview-sheet-fix.md and evidence/ticket-09-walkthrough.md.
