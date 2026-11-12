@@ -201,6 +201,34 @@ final class StoryWorkflowTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
     }
 
+    func testCancellingUnknownReplacementRecoveryPreservesOriginalBackupWhenRetainedAudioIsMissingOrCorrupt() async throws {
+        for corruptOriginal in [false, true] {
+            let (root, original) = try await makeFailedStoppedReplacement()
+            let retained = root.appendingPathComponent("Recordings/\(original.audioName)")
+            let backup = root.appendingPathComponent("Captures/\(original.audioName)")
+            let marker = root.appendingPathComponent("Recovery/\(original.id.uuidString).json")
+            try FileManager.default.copyItem(at: retained, to: backup)
+            if corruptOriginal { try Data().write(to: retained) }
+            else { try FileManager.default.removeItem(at: retained) }
+            try Data("unreadable marker".utf8).write(to: marker)
+            let reopened = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+            reopened.openStory(id: original.id)
+            reopened.cancelReplacementRecording()
+            XCTAssertNil(reopened.errorMessage)
+            XCTAssertEqual(reopened.currentStory, original)
+            XCTAssertEqual(try Data(contentsOf: backup), Data("original voice ".utf8))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("Captures").path), [original.audioName])
+            // Once the original retained path is restored, ordinary cleanup is safe.
+            try Data(contentsOf: backup).write(to: retained)
+            let restored = try StoryWorkflow(storageURL: root, audio: PausableAudio())
+            restored.openStory(id: original.id)
+            restored.retryKeepingRecording()
+            XCTAssertNil(restored.errorMessage)
+            XCTAssertEqual(try Data(contentsOf: XCTUnwrap(restored.currentAudioURL)), Data("original voice ".utf8))
+        }
+    }
+
     private func makeFailedStoppedReplacement() async throws -> (URL, Story) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         var failWrites = false

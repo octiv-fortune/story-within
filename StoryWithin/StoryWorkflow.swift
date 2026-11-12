@@ -196,10 +196,13 @@ final class StoryWorkflow {
         stopPlayback()
         do {
             if let original = replacementOriginal {
-                // Cancellation is explicit: remove owned replacement/recovery copies,
-                // always retaining the original asset referenced by metadata.
-                for candidate in ownedAudioURLs(id: original.id) + [replacementRecoveryURL(id: original.id)]
-                    where candidate != audioURL(for: original) && FileManager.default.fileExists(atPath: candidate.path)
+                // The original retained path may be unavailable; preserve its capture
+                // and staging backups too. Only other take identities are cancelled.
+                let originalName = audioURL(for: original).deletingPathExtension().lastPathComponent
+                let marker = replacementRecoveryURL(id: original.id)
+                for candidate in ownedAudioURLs(id: original.id) + [marker]
+                    where (candidate == marker || candidate.deletingPathExtension().lastPathComponent != originalName)
+                    && FileManager.default.fileExists(atPath: candidate.path)
                     && !stories.contains(where: { $0.id != original.id && audioURL(for: $0) == candidate }) {
                     try FileManager.default.removeItem(at: candidate)
                 }
