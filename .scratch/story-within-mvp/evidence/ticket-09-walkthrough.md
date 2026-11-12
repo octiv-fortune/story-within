@@ -1,0 +1,70 @@
+# Local MVP verification walkthrough
+
+Status: focused iOS27/iPhone15Pro demo verified. The user deferred accessibility checks on 2026-11-12; they are not a current MVP blocker or a reported pass. Earlier pending-check entries below are historical. This is not a declaration that every functional device check passed.
+
+Execution note: the environment restarted during the review fix and cleared `/private/tmp`, including earlier temporary build logs and worktrees. Committed source and verification summaries remain intact. Fresh final build/test results were subsequently obtained as recorded below; the pre-fix signed build was not installed.
+
+## Final reviewed build checkpoint
+
+The recovery fixes (`6a73f29`, `f839c99`) are integrated via `b339313`. All **64 native tests** passed on iOS 17.5, and fresh Debug simulator/Release iOS compilation passed. The identical integration source passed another generic Debug simulator build. Actual completion excerpts and environment identifiers are retained in [review-fix evidence](m1-review-fixes.md).
+
+A signed Debug iOS build passed (`/private/tmp/story-within-final-device-build.log`). The in-place iPhone update initially failed when the network device connection dropped; one retry succeeded, reporting the existing app bundle ID and `App installed`. The installed source matches the reviewed integration source; no app uninstall, data reset, schema migration, or provisioning change was performed. The previous user recordings have not been manually rechecked in this new version yet.
+
+The user has been asked to verify existing-story opening and a new disposable story's hint/resume/save/reopen, replacement cancellation, background finalization, and local-preview/withdrawal journey. These results are **pending**. Full VoiceOver, accessibility-size Dynamic Type, available route interruption, denied microphone access and physical failed-save checks remain open. Neither M1 readiness nor full specification completion is declared.
+
+## Confirmed evidence
+
+- The unmodified native project built before implementation. The final ticket-05 candidate (`9113572`) passed 56 combined native tests on iPhone 13 / iOS 17.5, Debug simulator compilation, and Release iOS compilation. Logs are linked in [ticket 05 evidence](ticket-05.md).
+- Earlier iPhone 15 Pro / iOS 27.0.1 checks, reported by the user: actual narration and title survive save/reopening; recording and pause/resume work; corrected playback buttons are readable; both human demo recordings play audibly. These observations precede the final hints, replacement and preview integration.
+- An interactive iOS 27.0 simulator smoke check traversed Home → Create → listener preferences → contextual demo coach → Skip → Start Recording → studio ready at 0:00. The typed fictitious preference remained visible. Entering the studio did not activate capture. No actual microphone recording was performed during this smoke check.
+- The studio renders at the largest accessibility text size. Reachability of the lower controls was inconclusive through Device Hub's CUA scroll/drag interaction; a complete large-text journey is still required. The simulator's original text size was restored afterward. No VoiceOver traversal or audible announcement result is claimed. A later attempt to check the other starting route could see Home visually, but Device Hub no longer exposed the simulator app accessibility tree; that second route was not interactively verified.
+
+## Updated iPhone journey
+
+Use a disposable new story for replacement, deletion and permission tests. Preserve existing personal stories. Keep the device offline for the local journey if practical; all M1 coaching and bundled audio are on-device.
+
+1. Open an existing story and check its title/audio. Start a new story through either starting approach. Enter an idea/preference, answer or skip a demo question, and start recording.
+2. Say “before the hint,” request inspiration, and check that capture pauses and the timer stops. Read a cue, choose Resume, say “after the hint,” then Stop. Play both segments; the paused break should be excluded. Edit the title and optional manual transcript, save privately, close/reopen and replay.
+3. On this disposable story, confirm Re-record, speak briefly, then cancel replacement. Check that the original title/text/audio remain. Try again and stop a successful replacement; check its audio and retained story details. A previous local-preview consent must not carry to the new recording.
+4. For another short disposable take, background the app while recording. Return: capture should be stopped, the microphone should stay off, and captured audio should remain reviewable. If a headset route or incoming call is available, repeat with that interruption and report the exact route/event. Reopen the finalized draft and replay it. Do not force-terminate an in-flight take as a promised recovery case.
+5. Save privately and open Explore: the story must be absent from the local preview section. Review the exact story for community preview, cancel once, then confirm the explicit on-device voice/text consent. Check it appears locally; withdraw it and check it disappears. Nothing is uploaded or visible to another device.
+
+## Remaining accessibility and recovery checks
+
+One-device interruption option: the user has no second phone for an incoming-call test. Set an audible Clock alarm for about two minutes ahead **before** beginning a disposable recording. Return to Story Within, start recording, and keep the app in the foreground until the alarm sounds. Dismiss the alarm, check that capture has stopped without automatically restarting, and replay/save/reopen the captured draft. Apple lists Clock alarms among audio-session interruption sources: https://developer.apple.com/library/archive/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioInterruptions/HandlingAudioInterruptions.html. This procedure has been suggested, not yet performed or passed; record the exact observed result. It does not establish a headset route-change result.
+
+- Complete creation, capture, hint/resume, review, save/reopen, and preview/withdrawal with accessibility-size Dynamic Type and VoiceOver. Check controls remain reachable, focus and state announcements are useful, and no playback starts automatically. Test Reduce Motion and restore the original setting.
+- Check denied microphone access using the disposable workflow, then restore the original permission. A denial must give a clear recovery path without pretending to record.
+- Failed/retried save, missing/corrupt assets, preview commit failures, cancelled/failed replacement, metadata migration and owned-file deletion have deterministic workflow evidence. Hardware/storage failure injection has not been performed on the user's phone; do not equate those tests with a physical failure result.
+- Full-story cultural/linguistic review is not established by audible demo playback. The bundled English human recordings have documented publisher licensing/attribution, not an isiZulu/isiXhosa language review.
+
+## Capability boundary
+
+Real: AVFoundation capture/pause/resume/playback; local SwiftData/audio storage; editable parent-authored text; bundled licensed human demo audio; explicit local preview and withdrawal.
+
+Demo: deterministic on-device coach and prepared text cues. No live AI, automatic transcription, live translation, or remote community publishing is claimed. M2 remains blocked on a secure proxy contract and competent language reviewers.
+
+
+## User feedback on the updated build
+
+The user replied “Everything looks great” to the combined existing-story, hint/resume/save/reopen, replacement cancellation, background finalization, and preview/withdrawal check, but specifically reported a blank popup when tapping Review for local community preview. Record the preceding recording/recovery/existing-story checks as user-passed; do not infer preview confirmation or withdrawal success past the failing sheet. Ticket 08 is reopened/claimed for the presentation defect. Full VoiceOver/Dynamic Type, route interruption when available, permission denial and remaining physical failure checks remain unverified.
+
+
+## Preview defect resolved on iPhone
+
+Application fix bde75c2 is integrated through f43aa10. The rendered UI regression failed before the fix and passes afterward, including Cancel/reopen; 64 workflow tests and Debug/Release/signed iPhone builds passed. The user then confirmed “Preview opens immediately; cancel/reopen and withdrawal pass.” This supersedes the earlier pending/failing preview result. The earlier existing-story, hint/resume, save/reopen, replacement-cancel and background-finalization checks are also user-passed. Full VoiceOver, accessibility-size Dynamic Type, available call/headset route interruption, permission denial and remaining physical failure checks are still unverified. M1 readiness is not claimed.
+
+
+## Real interruption result
+
+User confirmed: “Passed; microphone stays stopped and draft plays.” This completes the physical interruption-result check alongside earlier background finalization and replacement-cancellation passes. The Clock alarm method was suggested after the user said no second phone was available, but their result does not explicitly identify the trigger; no call-specific, alarm-specific or headset route-change claim is made. Functional ticket 05 is resolved. Full accessibility-size Dynamic Type/VoiceOver/Reduce Motion, microphone-denial and remaining physical failure checks remain open.
+
+
+## Current priority amendment
+
+The user explicitly requested skipping accessibility checks for now and focusing on functionality. The pending maximum-text-size question is withdrawn. Do not request further VoiceOver, Dynamic Type, Reduce Motion or focus/target/contrast walkthroughs for this MVP unless the user reopens that work. Keep existing accessibility support. Functional acceptance, privacy, real audio and truthful error recovery remain required; no unperformed physical test is relabeled as passed.
+
+
+## Focused demo completed
+
+After the user's iOS27/iPhone15Pro-only direction, source `3ff3d8d` was signed and installed in place. User confirmed “Actual on-device coach responds; recording/save/replay work.” Together with prior core recording/recovery/privacy/listening checks, 76 current deterministic tests and green builds, the amended demo gate is resolved. Full accessibility, older-device, exhaustive physical-negative and language-quality checks remain deferred, not passed. Coaching is actual on-device English generation when available, with explicitly labeled deterministic demo prompts otherwise. No Supabase/OpenAI setup is required.
