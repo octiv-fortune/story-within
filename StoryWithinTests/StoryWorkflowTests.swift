@@ -4,6 +4,166 @@ import SwiftData
 
 @MainActor
 final class StoryWorkflowTests: XCTestCase {
+    func testFailedDeleteRestoresOwnedAudioAndTextUntilDeletionCanBeRetried() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var storageUnavailable = false
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio(), commitChanges: { context in
+            if storageUnavailable { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording()
+        workflow.stopRecording()
+        workflow.title = "A story worth keeping"
+        workflow.transcript = "The hare came home."
+        workflow.savePrivately()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        let audioURL = try XCTUnwrap(workflow.currentAudioURL)
+        storageUnavailable = true
+        workflow.deleteCurrentStory(confirmed: true)
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.id, id)
+        let unchanged = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        unchanged.openStory(id: id)
+        XCTAssertEqual(unchanged.title, "A story worth keeping")
+        XCTAssertEqual(unchanged.transcript, "The hare came home.")
+        XCTAssertEqual(try Data(contentsOf: audioURL), Data("spoken narration".utf8))
+        storageUnavailable = false
+        workflow.deleteCurrentStory(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertNil(workflow.currentStory)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: audioURL.path))
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        XCTAssertTrue(reopened.stories.isEmpty)
+    }
+
+    func testBlankTitleValidationKeepsReviewEditsAndRecordingForCorrection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        workflow.stopRecording()
+        workflow.title = " \n "
+        workflow.transcript = "My own text"
+        workflow.savePrivately()
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.isSaved, false)
+        XCTAssertEqual(workflow.transcript, "My own text")
+        workflow.title = "The first seed"
+        workflow.savePrivately()
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.currentStory?.isSaved, true)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("spoken narration".utf8))
+    }
+    func testDeletionRequiresConfirmationAndPreservesSharedAndDemoAssets() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let initial = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await initial.startRecording()
+        initial.stopRecording()
+        let original = try XCTUnwrap(initial.currentStory)
+        let sharedURL = try XCTUnwrap(initial.currentAudioURL)
+        let demoURL = root.appendingPathComponent("Recordings/Demo/shared.m4a")
+        try FileManager.default.createDirectory(at: demoURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("permission-cleared demo".utf8).write(to: demoURL)
+        let container = try ModelContainer(for: StoryRecord.self, configurations:
+            ModelConfiguration(url: root.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
+        let context = ModelContext(container)
+        let shared = Story(id: UUID(), title: "Shared recording", audioName: original.audioName, duration: 3,
+                       isSaved: true, visibility: "private", createdAt: Date(), updatedAt: Date())
+        let demo = Story(id: UUID(), title: "Demo", audioName: "Demo/shared.m4a", duration: 3,
+                         isSaved: true, visibility: "private", createdAt: Date(), updatedAt: Date())
+        context.insert(StoryRecord(shared)); context.insert(StoryRecord(demo))
+        try context.save()
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        workflow.openStory(id: original.id)
+        workflow.deleteCurrentStory(confirmed: false)
+        XCTAssertEqual(workflow.currentStory?.id, original.id)
+        XCTAssertEqual(workflow.stories.count, 3)
+        workflow.deleteCurrentStory(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertFalse(workflow.stories.contains { $0.id == original.id })
+        XCTAssertEqual(try Data(contentsOf: sharedURL), Data("spoken narration".utf8))
+        workflow.openStory(id: demo.id)
+        workflow.deleteCurrentStory(confirmed: true)
+        XCTAssertNil(workflow.errorMessage)
+        XCTAssertEqual(try Data(contentsOf: demoURL), Data("permission-cleared demo".utf8))
+        XCTAssertEqual(workflow.stories.map(\.id), [shared.id])
+    }
+    func testFailedMetadataWriteKeepsEditsForRetryAndNeverClaimsSuccessfulExit() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        var storageUnavailable = false
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio(), commitChanges: { context in
+            if storageUnavailable { throw CocoaError(.fileWriteNoPermission) }
+            try context.save()
+        })
+        await workflow.startRecording()
+        workflow.stopRecording()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        workflow.title = "Tomorrow's story"
+        workflow.transcript = "The garden woke."
+        storageUnavailable = true
+        XCTAssertFalse(workflow.resolveReviewExit(.keepChanges))
+        XCTAssertNotNil(workflow.errorMessage)
+        XCTAssertEqual(workflow.transcript, "The garden woke.")
+        XCTAssertTrue(workflow.hasUnsavedReviewChanges)
+        let unchanged = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        unchanged.openStory(id: id)
+        XCTAssertEqual(unchanged.title, "My new story")
+        XCTAssertEqual(unchanged.transcript, "")
+        XCTAssertEqual(unchanged.currentStory?.isSaved, false)
+        storageUnavailable = false
+        XCTAssertTrue(workflow.resolveReviewExit(.keepChanges))
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.title, "Tomorrow's story")
+        XCTAssertEqual(reopened.transcript, "The garden woke.")
+        XCTAssertEqual(reopened.currentStory?.isSaved, false)
+    }
+    func testReviewExitCancelPreservesEditsAndDiscardOnlyRemovesUnsavedChanges() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        workflow.stopRecording()
+        workflow.title = "Kept title"
+        workflow.transcript = "Kept text"
+        workflow.savePrivately()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        workflow.title = "Unfinished title"
+        workflow.transcript = "Unfinished text"
+        XCTAssertTrue(workflow.hasUnsavedReviewChanges)
+        XCTAssertFalse(workflow.resolveReviewExit(.cancel))
+        XCTAssertEqual(workflow.transcript, "Unfinished text")
+        XCTAssertTrue(workflow.resolveReviewExit(.discardChanges))
+        XCTAssertEqual(workflow.title, "Kept title")
+        XCTAssertEqual(workflow.transcript, "Kept text")
+        XCTAssertFalse(workflow.hasUnsavedReviewChanges)
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.currentStory?.isSaved, true)
+        XCTAssertEqual(reopened.transcript, "Kept text")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("spoken narration".utf8))
+    }
+    func testManualReviewEditsSaveAndReopenWithoutChangingOriginalNarration() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        await workflow.startRecording()
+        workflow.stopRecording()
+        let id = try XCTUnwrap(workflow.currentStory?.id)
+        workflow.title = "The moon's garden"
+        workflow.creatorName = "Mama"
+        workflow.theme = "Kindness"
+        workflow.sourceLanguage = "isiZulu"
+        workflow.transcript = "A little hare planted a seed."
+        workflow.savePrivately()
+        let reopened = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
+        reopened.openStory(id: id)
+        XCTAssertEqual(reopened.title, "The moon's garden")
+        XCTAssertEqual(reopened.creatorName, "Mama")
+        XCTAssertEqual(reopened.theme, "Kindness")
+        XCTAssertEqual(reopened.sourceLanguage, "isiZulu")
+        XCTAssertEqual(reopened.transcript, "A little hare planted a seed.")
+        XCTAssertEqual(reopened.currentStory?.isSaved, true)
+        XCTAssertEqual(reopened.currentStory?.visibility, "private")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.currentAudioURL)), Data("spoken narration".utf8))
+    }
     // Each case has an isolated OS-temporary workspace. Do not unlink live SQLite
     // files in defer: SwiftData may retain their descriptors until host teardown.
 
@@ -219,21 +379,26 @@ final class StoryWorkflowTests: XCTestCase {
         let folder = root.appendingPathComponent("Recordings")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try Data("original installed-app narration".utf8).write(to: folder.appendingPathComponent(filename))
-        // A compatibility fixture using the first installed app's unchanged model
-        // and bare audioName format. Assertions use only the application workflow.
-        let legacyContainer = try ModelContainer(for: StoryRecord.self, configurations:
-            ModelConfiguration(url: root.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
-        let legacyContext = ModelContext(legacyContainer)
         let date = Date(timeIntervalSince1970: 1_795_000_000)
-        legacyContext.insert(StoryRecord(Story(id: id, title: originalTitle, audioName: filename, duration: 8,
-                                             isSaved: true, visibility: "private", createdAt: date, updatedAt: date)))
-        try legacyContext.save()
+        // Persist the actual original entity shape, then release its container.
+        // This catches incompatible additions rather than merely testing new rows.
+        try autoreleasepool {
+            let legacyContainer = try ModelContainer(for: FirstInstalledModel.StoryRecord.self, configurations:
+                ModelConfiguration(url: root.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
+            let legacyContext = ModelContext(legacyContainer)
+            legacyContext.insert(FirstInstalledModel.StoryRecord(id: id, title: originalTitle, audioName: filename, date: date))
+            try legacyContext.save()
+        }
         let workflow = try StoryWorkflow(storageURL: root, audio: DeterministicAudio())
         workflow.openStory(id: id)
         XCTAssertEqual(workflow.title, originalTitle)
         XCTAssertEqual(workflow.currentStory?.visibility, "private")
         XCTAssertEqual(workflow.currentStory?.createdAt, date)
         XCTAssertEqual(workflow.currentStory?.isSaved, true)
+        XCTAssertEqual(workflow.creatorName, "")
+        XCTAssertEqual(workflow.theme, "")
+        XCTAssertEqual(workflow.sourceLanguage, "")
+        XCTAssertEqual(workflow.transcript, "")
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(workflow.currentAudioURL)), Data("original installed-app narration".utf8))
         workflow.title = "My edited family story"
         workflow.savePrivately()
@@ -267,6 +432,25 @@ final class StoryWorkflowTests: XCTestCase {
         XCTAssertFalse(reopened.isPlaying)
         reopened.play()
         XCTAssertTrue(reopened.isPlaying)
+    }
+}
+
+private enum FirstInstalledModel {
+    @Model final class StoryRecord {
+        @Attribute(.unique) var id: UUID
+        var title: String
+        var audioName: String
+        var duration: TimeInterval
+        var isSaved: Bool
+        var visibility: String
+        var createdAt: Date
+        var updatedAt: Date
+
+        init(id: UUID, title: String, audioName: String, date: Date) {
+            self.id = id; self.title = title; self.audioName = audioName
+            duration = 8; isSaved = true; visibility = "private"
+            createdAt = date; updatedAt = date
+        }
     }
 }
 

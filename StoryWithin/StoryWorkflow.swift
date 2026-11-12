@@ -11,6 +11,10 @@ struct Story: Identifiable, Equatable {
     let visibility: String
     let createdAt: Date
     var updatedAt: Date
+    var creatorName = ""
+    var theme = ""
+    var sourceLanguage = ""
+    var transcript = ""
 }
 
 @Model
@@ -23,15 +27,23 @@ final class StoryRecord {
     var visibility: String
     var createdAt: Date
     var updatedAt: Date
+    // Optional additions allow the first installed store to migrate without a reset.
+    var creatorName: String? = nil
+    var theme: String? = nil
+    var sourceLanguage: String? = nil
+    var transcript: String? = nil
 
     init(_ story: Story) {
         id = story.id; title = story.title; audioName = story.audioName
         duration = story.duration; isSaved = story.isSaved; visibility = story.visibility
         createdAt = story.createdAt; updatedAt = story.updatedAt
+        creatorName = story.creatorName; theme = story.theme
+        sourceLanguage = story.sourceLanguage; transcript = story.transcript
     }
     var story: Story {
         Story(id: id, title: title, audioName: audioName, duration: duration,
-              isSaved: isSaved, visibility: visibility, createdAt: createdAt, updatedAt: updatedAt)
+              isSaved: isSaved, visibility: visibility, createdAt: createdAt, updatedAt: updatedAt,
+              creatorName: creatorName ?? "", theme: theme ?? "", sourceLanguage: sourceLanguage ?? "", transcript: transcript ?? "")
     }
 }
 
@@ -49,6 +61,7 @@ protocol StoryAudio: AnyObject {
 }
 
 enum CaptureState: Equatable { case idle, requestingPermission, recording, stopped, failed }
+enum ReviewExitChoice { case keepChanges, discardChanges, cancel }
 
 @MainActor
 @Observable
@@ -57,6 +70,7 @@ final class StoryWorkflow {
     private let context: ModelContext
     private let storageURL: URL
     private let audio: StoryAudio
+    private let commitChanges: (ModelContext) throws -> Void
     private var captureURL: URL?
     private var captureID: UUID?
     private var finalizedDuration: TimeInterval?
@@ -64,13 +78,19 @@ final class StoryWorkflow {
     private(set) var currentStory: Story?
     private(set) var stories: [Story] = []
     var title = "My new story"
+    var creatorName = ""
+    var theme = ""
+    var sourceLanguage = ""
+    var transcript = ""
     var errorMessage: String?
     private(set) var permissionDenied = false
     private(set) var isPlaying = false
 
-    init(storageURL: URL, audio: StoryAudio) throws {
+    init(storageURL: URL, audio: StoryAudio,
+         commitChanges: @escaping (ModelContext) throws -> Void = { try $0.save() }) throws {
         self.storageURL = storageURL
         self.audio = audio
+        self.commitChanges = commitChanges
         try FileManager.default.createDirectory(at: storageURL, withIntermediateDirectories: true)
         container = try ModelContainer(for: StoryRecord.self, configurations:
             ModelConfiguration(url: storageURL.appendingPathComponent("Stories.sqlite"), cloudKitDatabase: .none))
@@ -80,17 +100,39 @@ final class StoryWorkflow {
     }
 
     var currentAudioURL: URL? {
-        currentStory.map { story in
-            // The first installed app stored bare UUID.m4a filenames. Keep resolving
-            // those under Recordings; newly retained drafts can reference Captures.
-            let relative = story.audioName.hasPrefix("Captures/") ? story.audioName : "Recordings/\(story.audioName)"
-            return storageURL.appendingPathComponent(relative)
-        }
+        currentStory.map { audioURL(for: $0) }
+    }
+
+    private func audioURL(for story: Story) -> URL {
+        // The first installed app stored bare UUID.m4a filenames.
+        let relative = story.audioName.hasPrefix("Captures/") ? story.audioName : "Recordings/\(story.audioName)"
+        return storageURL.appendingPathComponent(relative)
     }
     var elapsedRecording: TimeInterval { audio.captureDuration }
     var playbackTime: TimeInterval { audio.playbackTime }
     var hasPendingRecording: Bool { captureID != nil }
     var canLeaveReview: Bool { !hasPendingRecording && captureState != .recording && captureState != .requestingPermission }
+    var hasUnsavedReviewChanges: Bool {
+        guard let story = currentStory else { return false }
+        return title != story.title || creatorName != story.creatorName || theme != story.theme
+            || sourceLanguage != story.sourceLanguage || transcript != story.transcript
+    }
+
+    /// Discarding review edits never discards a retained story or its narration.
+    func resolveReviewExit(_ choice: ReviewExitChoice) -> Bool {
+        switch choice {
+        case .cancel: return false
+        case .keepChanges:
+            keepDraft()
+            return currentStory != nil && canLeaveReview && errorMessage == nil
+        case .discardChanges:
+            guard currentStory != nil, canLeaveReview else { return false }
+            title = currentStory?.title ?? "My new story"
+            loadReviewFields()
+            errorMessage = nil
+            return true
+        }
+    }
 
     func startRecording() async {
         guard captureState != .recording, captureState != .requestingPermission, !hasPendingRecording else { return }
@@ -111,6 +153,7 @@ final class StoryWorkflow {
             try audio.startRecording(to: url)
             captureID = id; captureURL = url; finalizedDuration = nil
             currentStory = nil; title = "My new story"
+            loadReviewFields()
             captureState = .recording
         } catch { captureState = .failed; errorMessage = "Recording could not start. \(error.localizedDescription)" }
     }
@@ -144,6 +187,7 @@ final class StoryWorkflow {
         guard !hasPendingRecording else { return }
         stopPlayback()
         currentStory = nil; title = "My new story"; errorMessage = nil; permissionDenied = false
+        loadReviewFields()
         captureState = .idle
     }
 
@@ -155,6 +199,11 @@ final class StoryWorkflow {
         stopPlayback()
     }
 
+    func deleteCurrentStory(confirmed: Bool) {
+        guard confirmed, currentStory != nil else { return }
+        discardRecording()
+    }
+
     func discardRecording() {
         audio.stopPlayback(); isPlaying = false
         if captureState == .recording { _ = try? audio.finishRecording(); captureState = .stopped }
@@ -163,8 +212,12 @@ final class StoryWorkflow {
         do {
             var owned = Set<URL>()
             if let id = currentStory?.id ?? captureID { owned.formUnion(ownedAudioURLs(id: id)) }
-            if let url = currentAudioURL { owned.insert(url) }
             if let url = captureURL { owned.insert(url) }
+            // A story owns only its generated UUID assets. Other references (for
+            // example, demo audio) and files still used by another story survive.
+            owned = owned.filter { url in
+                !stories.contains { $0.id != currentStory?.id && audioURL(for: $0) == url }
+            }
             let trash = storageURL.appendingPathComponent("Discarding")
             try files.createDirectory(at: trash, withIntermediateDirectories: true)
             // Stage owned files before committing metadata removal. A filesystem failure
@@ -178,7 +231,7 @@ final class StoryWorkflow {
                 let records = try context.fetch(FetchDescriptor<StoryRecord>())
                 if let record = records.first(where: { $0.id == story.id }) { context.delete(record) }
             }
-            try context.save()
+            try commitChanges(context)
         } catch {
             context.rollback()
             var restorationFailed = false
@@ -247,7 +300,9 @@ final class StoryWorkflow {
 
     private func removeRedundantAudio(for story: Story) throws {
         let retained = currentAudioURL
-        for url in ownedAudioURLs(id: story.id) where url != retained && FileManager.default.fileExists(atPath: url.path) {
+        for url in ownedAudioURLs(id: story.id) where url != retained
+            && !stories.contains(where: { $0.id != story.id && audioURL(for: $0) == url })
+            && FileManager.default.fileExists(atPath: url.path) {
             try FileManager.default.removeItem(at: url)
         }
     }
@@ -267,6 +322,8 @@ final class StoryWorkflow {
         do {
             guard let url = currentAudioURL, FileManager.default.fileExists(atPath: url.path) else { throw StoryFailure.missingAudio }
             story.title = trimmed; story.isSaved = story.isSaved || markSaved; story.updatedAt = Date()
+            story.creatorName = creatorName; story.theme = theme
+            story.sourceLanguage = sourceLanguage; story.transcript = transcript
             try persist(story)
             currentStory = story; title = trimmed; errorMessage = nil
         } catch { errorMessage = "Your changes could not be saved. Your recording is kept; retry saving. \(error.localizedDescription)" }
@@ -276,6 +333,7 @@ final class StoryWorkflow {
         audio.stopPlayback(); isPlaying = false
         currentStory = stories.first { $0.id == id }
         title = currentStory?.title ?? "My new story"
+        loadReviewFields()
         captureState = .stopped; errorMessage = nil
         clearPendingCapture()
         if let story = currentStory {
@@ -308,13 +366,22 @@ final class StoryWorkflow {
             if let record = records.first(where: { $0.id == story.id }) {
                 record.title = story.title; record.audioName = story.audioName
                 record.isSaved = story.isSaved; record.updatedAt = story.updatedAt
+                record.creatorName = story.creatorName; record.theme = story.theme
+                record.sourceLanguage = story.sourceLanguage; record.transcript = story.transcript
             } else { context.insert(StoryRecord(story)) }
-            try context.save()
+            try commitChanges(context)
             try refreshStories()
         } catch { context.rollback(); throw error }
     }
     private func refreshStories() throws {
         stories = try context.fetch(FetchDescriptor<StoryRecord>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])).map(\.story)
+    }
+
+    private func loadReviewFields() {
+        creatorName = currentStory?.creatorName ?? ""
+        theme = currentStory?.theme ?? ""
+        sourceLanguage = currentStory?.sourceLanguage ?? ""
+        transcript = currentStory?.transcript ?? ""
     }
 }
 
